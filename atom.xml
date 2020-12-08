@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://yibaoshan.github.io/</id>
     <title>Yibs Space</title>
-    <updated>2020-12-08T02:10:22.916Z</updated>
+    <updated>2020-12-08T03:26:38.233Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://yibaoshan.github.io/"/>
     <link rel="self" href="https://yibaoshan.github.io/atom.xml"/>
@@ -16,19 +16,6 @@
         <link href="https://yibaoshan.github.io/post/edit-custom-vm-options-for-mac/">
         </link>
         <updated>2020-10-08T00:40:32.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<h2 id="欢迎来到我的小站呀很高兴遇见你">欢迎来到我的小站呀，很高兴遇见你！(<em>╹▽╹</em>)</h2>
-</blockquote>
-<h2 id="为什么会遇到这个问题">为什么会遇到这个问题？</h2>
-<hr>
-<p>编辑studio.vmoptions设置内存大小时不小心输入错误的字符，导致AS打不开了</p>
-<h2 id="解决了吗">解决了吗？</h2>
-<hr>
-<p>当然解决了，我的Android studio版本是4.1，配置文件路径和之前的不一样，让我好一顿找</p>
-<p>Android studio4.1之前：~/Library/Preferences/AndroidStudio xxx<br>
-Android studio4.1及4.1之后：~/Library/Application Support/Google/AndroidStudio xxx</p>
-<p>搞定，收工</p>
-]]></content>
     </entry>
     <entry>
         <title type="html"><![CDATA[【环境/配置】repo:command not found for mac]]></title>
@@ -36,61 +23,6 @@ Android studio4.1及4.1之后：~/Library/Application Support/Google/AndroidStud
         <link href="https://yibaoshan.github.io/post/repo-command-not-found-for-mac/">
         </link>
         <updated>2020-10-06T02:02:03.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<h2 id="欢迎来到我的小站呀很高兴遇见你">欢迎来到我的小站呀，很高兴遇见你！(<em>╹▽╹</em>)</h2>
-</blockquote>
-<h2 id="为什么会遇到这个问题">为什么会遇到这个问题？</h2>
-<hr>
-<p>最近在使用Mac尝试编译Android源码时遇到的错误</p>
-<h2 id="解决了吗">解决了吗？</h2>
-<hr>
-<p>当然，我的解决方案是在终端窗口输入下面两条指令</p>
-<pre><code>echo 'export PATH=$PATH:$HOME/bin' &gt;&gt; ~/.bash_profile
-export PATH=$PATH:$HOME/bin 
-</code></pre>
-<h2 id="你是如何解决的">你是如何解决的？</h2>
-<hr>
-<p>网上普遍的做法是</p>
-<pre><code>echo 'export PATH=$PATH:$HOME/bin' &gt;&gt; ~/.bashrc  
-export PATH=$PATH:$HOME/bin 
-</code></pre>
-<p>这两行代码在我的电脑环境中只会临时有效，重新打开新终端窗口依旧报<strong>not found</strong><br>
-环境变量有效范围不是全局的也不是用户的，这就很神奇了，我打算理解这两行指令</p>
-<p>我们来看第一行指令</p>
-<pre><code> echo 'export PATH=$PATH:$HOME/bin' &gt;&gt; ~/.bashrc 
-</code></pre>
-<p>&gt;&gt;是追加内容操作，我们去用户目录下找到.bashrc这个文件<br>
-左上角访达-&gt;前往-&gt;前往文件夹-&gt;键入~/</p>
-<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1607223853369.png" alt="" loading="lazy"></figure>
-<p>进入目录后按下Command+Shift+. 显示隐藏文件</p>
-<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1607225186390.png" alt="" loading="lazy"></figure>
-<p>打开.bashrc文件</p>
-<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1607225346835.png" alt="" loading="lazy"></figure>
-<p>如上图所示，.bashrc文件的确已经追加PATH路径，那为什么不生效呢？<br>
-一番搜索后我发现因为OS X在login启动时不会加载.bashrc文件，它的读取顺序是</p>
-<pre><code>1. /etc/profile
-2. ~/.bash_profile
-3. ~/.bash_login
-4. ~/.profile
-</code></pre>
-<p>既然已经知道问题所在了，那么解决起来就比较简单了</p>
-<pre><code>方案一： 在~/.bash_profile文件中追加
-    if [ -f ~/.bashrc ]; then
-        source ~/.bashrc
-    fi
-方案二：直接将PATH路径追加到.bash_profile中
-终端输入：echo 'export PATH=$PATH:$HOME/bin' &gt;&gt; ~/.bash_profile
-</code></pre>
-<p>搞定，收工</p>
-<h2 id="有需要补充的吗">有需要补充的吗？</h2>
-<hr>
-<p>文中第二条指令没有讲，它的作用就是设置当前终端的环境变量，只对当前窗口有效.</p>
-<h2 id="参考资料">参考资料：</h2>
-<hr>
-<ul>
-<li><a href="https://joshstaiger.org/archives/2005/07/bash_profile_vs.html">.bash_profile vs .bashrc</a></li>
-</ul>
-]]></content>
     </entry>
     <entry>
         <title type="html"><![CDATA[Hello]]></title>
@@ -98,12 +30,5 @@ export PATH=$PATH:$HOME/bin
         <link href="https://yibaoshan.github.io/post/hello/">
         </link>
         <updated>2020-10-01T13:30:27.000Z</updated>
-        <content type="html"><![CDATA[<!-- more -->
-<p>👏  欢迎来到我的博客</p>
-<p>这是我第一个静态博客，主要用它来记录我的生活、心情、知识、笔记、创意... ...</p>
-<p>更多内容请查看</p>
-<!-- more -->
-<p><a href="https://yibs.space/post/about/">关于我</a></p>
-]]></content>
     </entry>
 </feed>
