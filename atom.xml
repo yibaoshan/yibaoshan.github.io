@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://yibaoshan.github.io/</id>
-    <title>Yibs Space</title>
-    <updated>2020-12-17T09:50:56.100Z</updated>
+    <title>Yibs space</title>
+    <updated>2021-01-07T23:35:44.539Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://yibaoshan.github.io/"/>
     <link rel="self" href="https://yibaoshan.github.io/atom.xml"/>
-    <subtitle>never stop</subtitle>
+    <subtitle>Never Stop</subtitle>
     <logo>https://yibaoshan.github.io/images/avatar.png</logo>
     <icon>https://yibaoshan.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2020, Yibs Space</rights>
+    <rights>All rights reserved 2021, Yibs space</rights>
     <entry>
         <title type="html"><![CDATA[[Q] edit custom vm options for mac]]></title>
         <id>https://yibaoshan.github.io/post/question-edit-custom-vm-options-for-mac/</id>
