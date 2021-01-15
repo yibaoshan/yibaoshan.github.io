@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://yibaoshan.github.io/</id>
     <title>Yibs space</title>
-    <updated>2021-01-15T09:52:34.968Z</updated>
+    <updated>2021-01-15T09:54:33.038Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://yibaoshan.github.io/"/>
     <link rel="self" href="https://yibaoshan.github.io/atom.xml"/>
@@ -29,9 +29,5 @@
         <link href="https://yibaoshan.github.io/post/hello/">
         </link>
         <updated>2020-10-01T13:30:27.000Z</updated>
-        <summary type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1610704332781.png" alt="" loading="lazy"></figure>
-]]></summary>
-        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1610704332781.png" alt="" loading="lazy"></figure>
-]]></content>
     </entry>
 </feed>
