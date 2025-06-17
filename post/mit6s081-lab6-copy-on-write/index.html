@@ -1,0 +1,541 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab6 Copy-on-Write（写时复制） | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab6 Copy-on-Write（写时复制）
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-04-02 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h1 id="mit6s081-lab6-copy-on-write写时复制">MIT6.S081 - Lab6 Copy-on-Write（写时复制）</h1>
+<p>本篇是 MIT6.S081 操作系统课程 Lab6 的实验笔记，目标是完成 <code>fork()</code> 写时复制（Copy-on-Write）的功能，算是上一个懒分配实验的延伸。</p>
+<p>未修改的 <code>fork()</code> 会复制父进程所有的内存到子进程，这个过程耗时且浪费内存，写时复制的核心思想是：</p>
+<ul>
+<li><strong>fork 阶段，新创建的子进程页表，映射到父进程的物理地址，父子进程页表指向的物理地址是相同的</strong></li>
+<li><strong>同时，将共享的物理页面映射成 只读。</strong></li>
+<li><strong>只有当父子进程中的某一方尝试修改共享的页面时，触发页面错误，OS 才真正为子进程复制该页面。</strong></li>
+</ul>
+<blockquote>
+<ul>
+<li>Lab6 地址：https://pdos.csail.mit.edu/6.828/2020/labs/cow.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/cow</li>
+</ul>
+</blockquote>
+<p>在开始实验之前，你需要：</p>
+<ol>
+<li>观看 Lecture 8 课程录播视频：<strong>Interrupts（中断）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=zRnGNndcVEA</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=8</li>
+</ul>
+</li>
+<li>阅读 <a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c3/s0.html">《xv6 book》</a> 第五章： <strong>中断和设备驱动</strong>
+<ul>
+<li>英文原版：https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf</li>
+<li>中译版：https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c5/s0.html</li>
+</ul>
+</li>
+</ol>
+<h1 id="implement-copy-on-writehard">Implement copy-on write(hard)</h1>
+<p>Your task is to implement copy-on-write fork in the xv6 kernel. You are done if your modified kernel executes both the cowtest and usertests programs successfully.</p>
+<p><strong>实现 copy-on-write fork 功能，并通过 cowtest 和 usertests 测试程序。</strong></p>
+<p>实验要求不能在上一节懒加载代码的基础上改，请切换到 cow 分支。</p>
+<p>实现思路视频中讲得比较清楚：</p>
+<ol>
+<li><strong>延迟复制/释放，把一个物理页的复制（<code>kalloc()</code> then <code>memmove()</code>）和释放（<code>kfree()</code>）操作，改为记录这个物理页面被多少个进程引用</strong>
+<ul>
+<li>创建新的物理页，引用数 +1</li>
+<li>复制一个物理页面，该物理页的引用数 +1</li>
+<li>进程释放一个物理页面，引用计数 -1，只有最后一个进程解除引用时，才可以真正的释放物理内存。</li>
+<li>执行写时复制，物理页的引用数也需要 -1</li>
+</ul>
+</li>
+<li><strong>写时复制，本实验的核心功能，当一个进程尝试向一个共享页写入的时候，执行创建新物理页并复制。</strong>
+<ul>
+<li>为 PTE 新增标识，用来标记这个物理页是写时复制的共享页面。</li>
+<li>触发页面错误，OS 才真正为子进程复制该页面。</li>
+</ul>
+</li>
+</ol>
+<h3 id="1-延迟复制释放">1、延迟复制/释放</h3>
+<p>首先我们需要新增引用记数，用来记录每个物理页面被多少个进程引用，内存的申请释放都在 kalloc.c 文件</p>
+<pre><code class="language-c">...
+struct {
+  struct spinlock lock;
+  struct run *freelist;
+} kmem;
+
+// 物理地址转 index
+#define PA2IDX(p) (((uint64)(p)) / PGSIZE)
+
+struct {
+  struct spinlock lock; // 保证并发安全
+  int ref_arr[PHYSTOP / PGSIZE]; // 每个物理页面的引用次数
+} page_ref; // 模仿 kmem 新建页面引用结构
+...
+</code></pre>
+<p>新建 <code>page_ref</code> 结构体，里面有个数组用来存储物理页面的引用次数，还有个 <code>lock</code> 自旋锁，用来保证多 CPU 的并发安全。</p>
+<pre><code class="language-c">void
+kinit()
+{
+  initlock(&amp;kmem.lock, &quot;kmem&quot;);
+  initlock(&amp;page_ref.lock, &quot;pageref&quot;); // 初始化 page_ref.lock
+  freerange(end, (void*)PHYSTOP);
+}
+</code></pre>
+<p>初始化 page_ref.lock</p>
+<pre><code class="language-c">void *
+kalloc(void)
+{
+  ...
+  if(r){
+    memset((char*)r, 5, PGSIZE); // fill with junk
+    // 如果是新分配的有效物理页，引用计数为 1
+    page_ref.ref_arr[PA2IDX(r)] = 1;
+  }
+  return (void*)r;
+}
+</code></pre>
+<p>如果是新分配的有效物理页，引用计数需要为 1。</p>
+<p><code>kfree()</code> 释放函数也需要修改，释放一个物理页面，引用计数 -1，只有最后一个进程解除引用，没有进程映射到该物理页了，才真正释放页面</p>
+<pre><code class="language-c">void
+kfree(void *pa)
+{
+  struct run *r;
+
+  if(((uint64)pa % PGSIZE) != 0 || (char*)pa &lt; end || (uint64)pa &gt;= PHYSTOP)
+    panic(&quot;kfree&quot;);
+
+  acquire(&amp;page_ref.lock);
+
+  // 只有页面的引用计数为 0，没有进程映射到该物理页了，才真正释放页面
+  if(--page_ref.ref_arr[PA2IDX(pa)] &lt;= 0) {
+
+    // Fill with junk to catch dangling refs.
+    memset(pa, 1, PGSIZE);
+
+    r = (struct run*)pa;
+
+    acquire(&amp;kmem.lock);
+    r-&gt;next = kmem.freelist;
+    kmem.freelist = r;
+    release(&amp;kmem.lock);
+  }
+
+  release(&amp;page_ref.lock);
+}
+</code></pre>
+<p>同时，还需要给外部提供增加引用次数和复制物理页的函数</p>
+<pre><code class="language-c">
+// 如果有必要，克隆一页物理页
+void *ktry_pgclone(void *pa) {
+
+    acquire(&amp;page_ref.lock);
+
+    // 这个物理页本来就只有一个地方引用，直接返回
+    if(page_ref.ref_arr[PA2IDX(pa)] &lt;= 1) {
+        release(&amp;page_ref.lock);
+        return pa;
+    }
+
+    // 申请一页物理页
+    uint64 newpa = (uint64)kalloc();
+
+    if(newpa == 0) {
+        release(&amp;page_ref.lock);
+        return 0;
+    }
+
+    // 复制老物理页内容到新页
+    memmove((void*)newpa, (void*)pa, PGSIZE);
+
+    // 老物理页引用减一
+    page_ref.ref_arr[PA2IDX(pa)]--;
+
+    release(&amp;page_ref.lock);
+    return (void*)newpa;
+}
+
+// 增加物理页面的引用次数
+void kparef_inc(void *pa) {
+    acquire(&amp;page_ref.lock);
+    page_ref.ref_arr[PA2IDX(pa)]++;
+    release(&amp;page_ref.lock);
+}
+</code></pre>
+<p>把原先的 vm.c 里面的 copy 工作，改为对这个物理页的引用次数 +1</p>
+<pre><code class="language-c">int
+uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+{
+  pte_t *pte;
+  uint64 pa, i;
+  uint flags;
+//  char *mem; // 不需要新的内存空间的
+
+  for(i = 0; i &lt; sz; i += PGSIZE){
+    if((pte = walk(old, i, 0)) == 0)
+      panic(&quot;uvmcopy: pte should exist&quot;);
+    if((*pte &amp; PTE_V) == 0)
+      panic(&quot;uvmcopy: page not present&quot;);
+    pa = PTE2PA(*pte);
+
+    // 如果页面是可写权限，那把它标记为 COW 并移除写权限
+    if (*pte &amp; PTE_W) {
+        *pte = (*pte &amp; ~PTE_W) | PTE_COW;
+    }
+
+    flags = PTE_FLAGS(*pte);
+
+    // 这里取消申请内存并复制的操作
+//    if((mem = kalloc()) == 0)
+//      goto err;
+//    memmove(mem, (char*)pa, PGSIZE);
+
+    // 将爸爸的物理地址映射到新的页表
+    if(mappages(new, i, PGSIZE, (uint64)pa, flags) != 0){
+      goto err;
+    }
+    // 将物理页的引用次数增加 1
+      kparef_inc((void*)pa);
+  }
+  return 0;
+
+ err:
+  uvmunmap(new, 0, i / PGSIZE, 1);
+  return -1;
+}
+</code></pre>
+<h3 id="2-写时复制">2、写时复制</h3>
+<p>内存复制延迟到写操作，那就需要一种方来标记，哪些页面是写时复制的共享页面，我们这里用的是 PTE 的保留位来实现</p>
+<pre><code>kernel/riscv.h
+...
+#define PTE_U (1L &lt;&lt; 4) // 1 -&gt; user can access
+#define PTE_COW (1L &lt;&lt; 8)  // 第8位保留位用于标记 COW 页面
+</code></pre>
+<p>提供个方法，针对 cow 页面，执行创建新物理页并复制。</p>
+<pre><code class="language-c">kernel/vm.c
+// 处理 COW 页错误
+int cow_handler(pagetable_t pagetable, uint64 va)
+{
+    pte_t *pte;
+
+    // 拿到 va 对应的页表项
+    if((pte = walk(pagetable, va, 0)) == 0)
+        panic(&quot;uvmcowcopy: walk&quot;);
+
+    uint64 pa = PTE2PA(*pte);
+    uint64 newpa;
+    // 转为 pa 丢到 kalloc 里面处理，因为涉及到物理页的记数操作
+    if((newpa = (uint64)ktry_pgclone((void*)pa)) != 0){
+        // 重新修改为可写，并删除 cow 标识
+        uint64 flags = (PTE_FLAGS(*pte) | PTE_W) &amp; ~PTE_COW;
+        // 解除原来的映射，注意最后一个参数要传0，不释放物理页
+        uvmunmap(pagetable, PGROUNDDOWN(va), 1, 0);
+        // 映射到新的物理页
+        if(mappages(pagetable, va, 1, newpa, flags) == -1) {
+            panic(&quot;uvmcowcopy: mappages&quot;);
+        }
+        return 0;
+    }
+    return -1;
+}
+</code></pre>
+<p>然后，如果发现是 cow 页面，就调用 <code>cow_handler()</code> 来处理。</p>
+<pre><code class="language-c">kernel/vm.c
+#include &quot;spinlock.h&quot;
+#include &quot;proc.h&quot;
+int
+copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
+{
+  uint64 n, va0, pa0;
+  pte_t *pte;
+  struct proc *p = myproc();
+
+  while(len &gt; 0){
+    va0 = PGROUNDDOWN(dstva);
+
+    // 如果是 cow 页，执行复制
+    if(va0 &lt; p-&gt;sz &amp;&amp; (pte = walk(pagetable, va0, 0))!=0 &amp;&amp; *pte &amp; PTE_V&amp;&amp; *pte &amp; PTE_COW)
+        cow_handler(pagetable,va0);
+    pa0 = walkaddr(pagetable, va0);
+    ...
+}
+</code></pre>
+<pre><code>kernel/trap.c
+void
+usertrap(void) {
+    ...
+    if (r_scause() == 8) {
+        // system call
+        ...
+    } else if ((which_dev = devintr()) != 0) {
+        // ok
+    } else if (r_scause() == 13 || r_scause() == 15) { // 和上一节实验一样，响应页错误
+        pte_t *pte;
+        uint64 va = r_stval();
+        // 检查地址是否合法
+        if (va &gt;= p-&gt;sz)
+            exit(-1);
+        pte = walk(p-&gt;pagetable, va, 0);
+        // 检查 pte 是否有效且是个 cow 页，不满足条件直接干掉进程
+        if (pte == 0 || (*pte &amp; PTE_V) == 0 || (*pte &amp; PTE_COW) == 0)
+            exit(-1);
+        // 如果是 cow 页面，尝试为它完成写时复制
+        if (cow_handler(p-&gt;pagetable, va) == -1) {
+            exit(-1);
+        }
+    } else {
+        printf(&quot;usertrap(): unexpected scause %p pid=%d\n&quot;, r_scause(), p-&gt;pid);
+        printf(&quot;            sepc=%p stval=%p\n&quot;, r_sepc(), r_stval());
+        p-&gt;killed = 1;
+    }
+    ...
+}
+</code></pre>
+<p>最后来执行测试用例 cowtest</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1743584866497.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/63b00eaae1c503792142d0e770fc99faaec6a182</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Wings：https://blog.wingszeng.top/series/learning-mit-6-s081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab5-lazy/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab5 Lazy（延迟分配）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

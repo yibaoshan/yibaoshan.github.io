@@ -1,0 +1,365 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 操作系统实验 - 踩坑总结 | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 操作系统实验 - 踩坑总结
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-05-05 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1746376321374.png" alt="" loading="lazy"></figure>
+<blockquote>
+<p><em>how important is it for application developers to truly deeply understand the operating systems they're developing their applications for do they necessarily need to be experts</em></p>
+<p><em>from [6.S081 Fall 2020 Lecture 1: Introduction and Example] https://www.bilibili.com/video/BV19k4y1C7kA</em></p>
+</blockquote>
+<p>学生提问：对于 <strong>应用程序开发人员</strong> 来说，真正深入理解 <strong>操作系统</strong> 有多重要？我们是否需要成为 <strong>操作系统</strong> 方面的专家？</p>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1746376331229.png" alt="" loading="lazy"></figure>
+<blockquote>
+<p><em>you don't have to be an expert but if you spend um a lot of time developing and maintaining and debugging applications you'll eventually end up knowing a lot about the operating system whether you whether you meant to or not it just comes up and you're often forced to understand</em></p>
+</blockquote>
+<p>Robert 教授：你不必成为一个 <strong>操作系统</strong> 专家。但是，如果你花费大量时间来开发、维护和调试应用程序，你最终还是会知道大量的 <strong>操作系统</strong> 方面的知识，不管你想不想要掌握这些知识，它们就是出现了，而你，不得不去理解它们。</p>
+<p>翻译成白话就是 “<strong>只要你做开发，那操作系统你早晚都得学</strong>”。这也是我学习 <strong>操作系统</strong> 的初衷。</p>
+<p>作为最后一篇总结贴，接下来我将一一介绍， MIT 6.S081 Fall 2020 所有实验的难点和我自己的心得，希望能给你一些启发。</p>
+<h1 id="实验介绍">实验介绍</h1>
+<h3 id="lab1-utils">Lab1 - Utils</h3>
+<p>入门实验，一共六道题，三道简单三道中等，其中有一道是算法题，在 LeetCode 上有原题：https://leetcode.cn/problems/count-primes/。</p>
+<p>Lab1 的这几个实验都不是很难，还没深入到内核的实现机制，主要是让我们熟悉 <strong><code>xv6</code></strong> 的开发环境，常用的 <strong>系统调用</strong>，理解 <strong>进程创建</strong> 和 <strong>通信</strong>，<strong>文件系统</strong> 操作等。</p>
+<p>总的来说题不难，就是搭环境可能费点事，不想去折腾的话，也可以使用其他同学制作好的 docker 镜像：<a href="https://zhuanlan.zhihu.com/p/449687883">《一个玩转国外CSLab的通用环境搭建方案（附我的搭建好的MIT6.S081/MIT6.1810环境）》</a>。</p>
+<p>主观难度：⭐️⭐️⭐️（<em>搭环境占两颗星</em>）</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/27073703813</p>
+<h3 id="lab2-system-calls-系统调用">Lab2 - System calls 系统调用</h3>
+<p>两道中等题目，实验目的是了解什么是 <strong>用户态</strong>、<strong>内核态</strong>，以及调用了 <strong><code>syscall</code></strong> 以后发生了什么？</p>
+<p>实验的逻辑部分的代码量不是很多，重点还是要弄清楚 <strong>syscall 的调用流程</strong>，以及 <strong>系统调用的参数传递</strong>（<em>熟悉 <code>RISC-V</code> 寄存器功能</em>）。</p>
+<p>尤其是为 xv6 工程 <strong>添加新的系统调用</strong> 流程，比较繁琐，经常会遇到漏了某个地方编译不过的情况，大家在做实验的时候，建议全局搜索已有 <strong><code>syscall</code></strong> 函数，在它后面新增目标函数。</p>
+<p>主观难度：⭐️⭐️⭐️（<em>新增系统调用流程占两颗星</em>）</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/28449562710</p>
+<h3 id="lab3-page-table-页表">Lab3 - Page table 页表</h3>
+<p>页表实验一共三道题，一道简单题，两道困难题：</p>
+<ul>
+<li><strong>打印页表（<em>Print a page table</em>）</strong>，简单题，按照固定格式打印页表下包含的所有 <strong>列表项</strong>。</li>
+<li><strong>进程页表（<em>A kernel page table per process</em>）</strong>，困难题，实验的目标是，让每个进程在 <strong>内核态</strong> 执行时，使用自己的 <strong>内核页表副本</strong>，而不是共享一个 <strong>全局内核页表</strong>。做这道题，你需要对 <strong><code>RISC-V</code></strong> 的页表机制、xv6 的 <strong>内存管理</strong>（<em>分配和释放</em>），以及 <strong>进程调度</strong> 和 <strong>上下文切换</strong> 的一些实现细节一定的了解。</li>
+<li><strong>简化 copyin/copyinstr（<em>Simplify copyin/copyinstr</em>）</strong>，困难题，这个实验要我们把 <strong>用户空间页表</strong> 映射到上一道题创建的 <strong>用户内核页表</strong> 中，以便 <strong>内核</strong> 可以直接访问 <strong>用户空间</strong>。</li>
+</ul>
+<p>lab3 应该是课程最难的实验之一，在本节实验中，我们需要修改 xv6 页表部分的代码来完成一些功能，为了实验能顺利进行，我们必须先要了解：<strong>RISC-V Rv39 的页表设计</strong> 以及  <strong>xv6 是怎么使用它的</strong>？</p>
+<p>主观难度：⭐️⭐️⭐️⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1887529768225859078</p>
+<h3 id="lab4-traps-中断和陷阱">Lab4 - Traps 中断和陷阱</h3>
+<p>Lab4 一共两道题，一题中等，一题困难，考察的是 <strong>系统调用的实现</strong>（<em>Lab2已经做过了</em>）、<strong>用户态和内核态的切换</strong>、<strong>如何保存和回复进程的上下文</strong>、以及 <strong>处理时钟中断</strong> 这几点。</p>
+<p>总体来说难度不高，相比于实验，更重要的是 Lec5 和 Lec6 课程中，对 xv6 在 <strong><code>RISC-V</code></strong> 上的 <strong>Trap 流程</strong> 进行学习。</p>
+<p>主观难度：⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1888668467030388947</p>
+<h3 id="lab5-lazy-alloc-memory-延迟分配内存">Lab5 - Lazy alloc memory 延迟分配内存</h3>
+<p>两道中等题目，目标是利用虚拟内存（页表硬件）完成 <strong>Lazy page allocation 延迟分配内存</strong> 的功能。</p>
+<ul>
+<li>用户进程调用 <strong><code>malloc()</code></strong> 申请内存时，OS 不会真的为进程分配物理内存并映射到用户进程页表，而是等待真正访问到一块内存再分配。</li>
+<li>优点
+<ul>
+<li>避免用户申请大内存但只使用一小部分的情况发生。</li>
+<li>在大量内存复制的场景中节约了时间和内存空间，比如 <strong><code>fork()</code></strong> 的 <strong>写时复制(copy on write)</strong> ，fork 阶段把父子进程共享的物理页面映射成 <strong>只读</strong>，当父子进程中任意一个进程执行写时，触发页面错误，OS 此时再复制这个错误的页面。</li>
+</ul>
+</li>
+<li>缺点，总的时间成本会增加，因为 <strong>页错误（page fault）</strong> 会切换到内核，相较于直接分配增加了额外的开销，我个人认为是一种时间换空间的策略。</li>
+</ul>
+<p>和前面几个 lab 不同，lab5 的三道题只是为了完成懒分配这一个功能，每题完成一部分，所以，lab 5 可以理解为只有一个实验。</p>
+<p>实验的总体难度不高，其中一半的代码老师已经在视频课介绍过了，可以对着视频抄。</p>
+<p>主观难度：⭐️⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1890104776894694212</p>
+<h3 id="lab6-copy-on-write-写时复制">Lab6 - Copy-On-Write 写时复制</h3>
+<p>lab6 实验目标是完成 <strong><code>fork()</code></strong> 写时复制（<em>Copy-on-Write</em>）的功能，算是上一个懒分配实验的延伸。</p>
+<p>未修改的 <strong><code>fork()</code></strong> 会复制父进程所有的内存到子进程，这个过程耗时且浪费内存，写时复制的核心思想是：</p>
+<ul>
+<li><strong><code>fork</code></strong> 阶段，新创建的子进程页表，映射到父进程的物理地址，父子进程页表指向的 物理地址 是 <strong>相同的</strong>。</li>
+<li>同时，将共享的物理页面映射成 <strong>只读</strong>。</li>
+<li>只有当父子进程中的 <strong>任意一方</strong> 尝试修改共享的页面时，触发页面错误，OS 才真正为子进程复制该页面。</li>
+</ul>
+<p>需要注意的是，实验要求不能在上一节懒加载代码的基础上改，实验前请切换到 cow 分支。</p>
+<p>主观难度：⭐️⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1890812214480450640</p>
+<h3 id="lab7-multithreading-多进程调度">Lab7 - Multithreading 多进程调度</h3>
+<p><strong>进程调度</strong>、<strong>内存管理</strong>、<strong>中断处理</strong>，这三点是操作系统最最最最核心的功能，其中，<strong>内存管理的页表</strong> 和 <strong>中断处理</strong> 我们分别在 Lab3、Lab4 中已经介绍过了，本实验我们将会接触到 <strong>进程调度</strong> 的设计和实现。</p>
+<p>实验任务是，模仿内核进程切换，写一个用户级线程切换功能（<em>另外两道题是和并发安全相关的送分题，比较无聊</em>）。</p>
+<p>Lab7 这几道题在最近几个实验里面，难度算是最低的，甚至比 Lab1 还要简单。不过，要想顺利完成 Lab7，我们需要对 xv6 的 “<strong>进程切换机制</strong>” 有个基本的了解。</p>
+<p>xv6 进程调度主要依赖两个函数，调度器 <strong><code>scheduler()</code></strong> 和汇编实现的 <strong><code>swtch()</code></strong> ：</p>
+<ol>
+<li><strong><code>scheduler()</code>：调度器函数，任务是遍历进程表，寻找一个处于 <code>runnable</code> 状态的进程，然后调用 <code>swtch()</code> 切换到该进程。</strong></li>
+<li><strong><code>swtch()</code>：上下文切换函数，汇编代码 swtch.S 实现，入参是两个 <code>context</code> 结构体 <code>old</code> 和 <code>new</code>，用于交换两个进程的上下文（把当前 CPU 状态写入 <code>old</code>，再把 <code>new</code> 代表的目标进程的写到 CPU，完成切换）。</strong></li>
+</ol>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1746376343546.png" alt="" loading="lazy"></figure>
+<p>主观难度：⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1893764028788085772</p>
+<h3 id="lab8-locks-锁优化-并发安全">Lab8 - Locks 锁优化 | 并发安全</h3>
+<p>一道中等题，一道困难题，目标是在保证并发安全的前提下，重新设计 <strong>内存分配器</strong> 和 <strong>块缓存</strong> 这两个部分代码，提高系统并发性能。</p>
+<p>对于有项目经验的同学来说，实验的难度不算高，重点在于找出 <strong>“哪些操作有并发安全问题”</strong> 需要加锁，实验也没有涉及到新的知识点，直接动手做就行了。</p>
+<p>主观难度：⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1895507803373814529</p>
+<h3 id="lab9-file-system-文件系统">Lab9 - File system 文件系统</h3>
+<p>两道中等题，目标是让 xv6 支持 <strong>大文件</strong> 和实现类似 Linux <strong>软链接</strong> 的功能。</p>
+<p>实验目的是让我们了解：<strong>文件系统是怎么使用磁盘的？</strong> 以及 <strong>xv6 的文件系统是如何工作的？</strong></p>
+<pre><code class="language-c">+----------------+----------------+-------------+-------------+----------------+-------------+
+| 引导扇区(block0)|  超级块(block1) |    log区     | inode区     |   bitmap块     |    数据区    |
++----------------+----------------+-------------+-------------+----------------+-------------+
+</code></pre>
+<p>主观难度：⭐️⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1898040100610347926</p>
+<h3 id="lab10-mmap-文件内存映射">Lab10 - Mmap 文件内存映射</h3>
+<p>lab10 只有一道困难题：实现文件映射到内存的功能，也就是 mmap。</p>
+<p>这道题涉及到 <strong>内存管理</strong>、<strong>文件系统</strong>、<strong>trap 中断处理</strong>、<strong>进程调度</strong> 等多个模块，整体难度我觉得仅次于 lab3 的 <strong>页表</strong> 实验。</p>
+<p>虽然实验步骤已经在提示部分写的很详细了，但在实现过程中，还是有比较多的细节需要自己去思考、试错，比如： <strong>mmap 的入参合法性检查</strong>（<em>错了好多次</em>）、<strong>trap handler 懒分配的 <code>flags</code> 处理</strong>、<strong>munmap 的脏页写回和边界处理</strong> 等等。</p>
+<p>主观难度：⭐️⭐️⭐️⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1899934104939659625</p>
+<h3 id="lab11-networking-网络栈">Lab11 - Networking 网络栈</h3>
+<p>lab11 只有一道困难题，这是课程的最后一个实验，目标是为 xv6 实现 <strong><code>E1000</code></strong> 网卡驱动的两个核心函数：发送数据包 <strong><code>e1000_transmit()</code></strong> 和接收数据包 <strong><code>e1000_recv()</code></strong> 。</p>
+<p>实验的难度不算高，实现步骤在提示部分已经给的很全了，按照提示一步步实现即可。</p>
+<p>唯一需要注意的是，测试用例中 DNS 测试的地址是 Google 的 8.8.8.8，我们的网络可能无法访问，换成了阿里的 DNS 服务器地址即可通过。</p>
+<p>主观难度：⭐️⭐️</p>
+<p>实验笔记：https://zhuanlan.zhihu.com/p/1900640635079364808</p>
+<h1 id="总结">总结</h1>
+<p>磕磕绊绊近两个月，终于把 MIT 6.S081 Fall 2020 课程啃完了。</p>
+<p>不得不说 6.S081 课程设计的非常出色，我个人最感兴趣的 <strong>进程调度</strong>、<strong>内存管理</strong>、<strong>中断处理</strong>、<strong>文件系统</strong>、<strong>网络</strong> 这几个模块都有涉及，并且每个实验都有详细的提示，告诉你要实现什么功能，大概要改哪些文件的哪些函数，但又不会把所有细节都告诉你，留出足够的思考空间。如果你想学习 <strong>操作系统</strong> 的话 6.S081 绝对值得尝试。</p>
+<p>最后，推荐几个课程的中文资源：</p>
+<ul>
+<li>视频课程中译版：https://www.bilibili.com/video/BV19k4y1C7kA/</li>
+<li>视频课程中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081</li>
+<li>《xv6 os book》中译版：https://xv6.dgs.zone/</li>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Wings：https://blog.wingszeng.top/series/learning-mit-6-s081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab11-networking/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab11 networking（网络栈）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

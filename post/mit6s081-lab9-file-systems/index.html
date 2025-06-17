@@ -1,0 +1,643 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title> MIT6.S081 - Lab9 File Systems（文件系统） | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                     MIT6.S081 - Lab9 File Systems（文件系统）
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-04-22 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>本篇是 MIT6.S081 2020 操作系统课程 Lab9 的实验笔记，目标是让 xv6 支持 <strong>大文件</strong> 和实现类似 <strong>Linux 软链接</strong> 的功能，同时，我也会结合源码来介绍 xv6 文件系统的设计与实现。</p>
+<blockquote>
+<ul>
+<li>Lab9 地址：https://pdos.csail.mit.edu/6.828/2020/labs/fs.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/fs</li>
+</ul>
+</blockquote>
+<p>在开始实验之前，你需要：</p>
+<ol>
+<li>观看 Lecture 14 课程录播视频：<strong>File Systems（文件系统）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=ADzLv1nRtR8</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=13</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec14-file-systems-frans</li>
+</ul>
+</li>
+<li>观看 Lecture 15 课程录播视频：<strong>Crash recovery（崩溃恢复）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=7Hk2dIorDkk</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=14</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec15-crash-recovery-frans</li>
+</ul>
+</li>
+<li>阅读 <a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c3/s0.html">《xv6 book》</a> 第八章： <strong>File Systems（文件系统）</strong>
+<ul>
+<li>英文原版：https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf</li>
+<li>中译版：https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c8/s0.html</li>
+</ul>
+</li>
+<li>阅读 xv6 源码：
+<ul>
+<li>https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/bio.c</li>
+<li>https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/fs.c</li>
+<li>https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/sysfile.c</li>
+<li>https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/file.c</li>
+<li>https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/log.c</li>
+</ul>
+</li>
+</ol>
+<h1 id="聊聊-xv6-的文件系统">聊聊 xv6 的文件系统</h1>
+<p>xv6 的文件系统和早期 Linux v0.11 在设计思想及实现上比较相似，比如他们都使用 <strong>inode</strong> 作为文件系统的核心数据结构、都支持目录层次结构、采用数据块缓存机制等。</p>
+<p>块缓存我们在上一篇文章 <a href="https://yibs.space/post/mit6s081-lab8-locks/">《Lab8 Locks（锁优化 | 并发安全）》</a> 中已经接触过了，它的功能是为了减少磁盘的 I/O 操作，提高系统性能。</p>
+<p>本小节我们重点讨论 xv6 文件系统的核心：<strong>inode</strong></p>
+<h3 id="1-文件系统是怎么使用磁盘的">1、文件系统是怎么使用磁盘的</h3>
+<p>正文开始前，我们先来了解磁盘的存储结构</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1745307478493.png" alt="" loading="lazy"></figure>
+<p><em>图片来源：自己画的</em></p>
+<p>如图所示，受早期 IBM PC 的影响，<strong>扇区（Sector）</strong> 成为了磁盘上最小的操作单位（<em>事实上的工业标准并一直延续至今</em>），扇区大小是 512 byte，大多数硬盘驱动都支持该标准，包括 Linux 和本篇的 xv6。</p>
+<p>每个扇区都有自己的唯一 ID，操作系统要读写某个扇区时，首先确定柱面（<em>多个盘面的同一磁道构成的圆柱被称作柱面</em>），再确定盘面，最后确定扇区（<em>我们这里只关注扇区，所以柱面、盘面、磁头名词解释不再展开</em>）。</p>
+<p><a href="https://yibs.space/post/mit6s081-lab8-locks/"><strong>Buffer Cache</strong></a> 实验中我们知道， xv6 使用了 <strong>块（Block）</strong> 对扇区 Sector 进行了抽象封装，文件系统中的所有接口都是基于 **块（Block）**操作，应用程序是无法直接和磁盘的扇区交互的：</p>
+<ul>
+<li><strong>一个 <code>block</code> 可能对应多个 <code>sector</code></strong></li>
+<li><strong>在 <code>512 byte / sector</code> 的磁盘上，一个 <code>block</code> 就等于两个连续的 <code>sector</code>，因为 xv6 中一个 <code>block</code> 大小是 1kb</strong>
+<ul>
+<li>block 0 对应 sector 0,1</li>
+<li>block 1 对应 sector 2,3</li>
+<li>block 2 对应 sector 4,5</li>
+<li>以此类推...block 号 n 对应的扇区号是 2n 和 2n+1</li>
+</ul>
+</li>
+<li><strong>当文件系统要读写一个块时，磁盘驱动程序需要进行两次扇区操作</strong>
+<ul>
+<li>先读取第一个扇区（512 byte）</li>
+<li>再读取第二个扇区（512 byte）</li>
+<li>组合成一个完整的块（1024 byte）</li>
+</ul>
+</li>
+</ul>
+<p>把 sector 封装为 block，站在 OS 的角度来说，磁盘就可以看为一个 <strong>“巨大的 block 数组”</strong> ，假设磁盘大小为 1MB，那么这个 <strong>block 数组</strong> 的范围就是 0 ~ 1023。</p>
+<p>在 xv6 中，数组的结构分布如下：</p>
+<pre><code class="language-c">+----------------+----------------+-------------+-------------+----------------+-------------+
+| 引导扇区(block0)|  超级块(block1) |    log区     | inode区     |   bitmap块     |    数据区    |
++----------------+----------------+-------------+-------------+----------------+-------------+
+</code></pre>
+<ol>
+<li><strong>block 0</strong> 是 <strong>引导扇区</strong>，里面存储的代码负责 加载内核并启动系统，和本文关系不大，可以忽略。</li>
+<li><strong>block 1</strong> 是 <strong>超级块（superblock）</strong>，这 1kb 里面存储着磁盘的 <strong>使用情况</strong>，系统启动后读取这一个块就能知道当前的磁盘信息，比如磁盘中总共有多少块，哪些块被使用了等<pre><code class="language-c">struct superblock {
+  uint magic;        // 用于标识文件系统类型的魔数，编译 fs.img 时写入固定值（0x10203040），系统启动后读取这个值，判定 是否是 xv6 文件系统
+  uint size;         // 文件系统的总块数，xv6 硬编码写死为 200000，正常情况会从 BIOS/UEFI 接口中读
+  uint nblocks;      // 可用于存储数据的块数（不包括引导块、超级块、inode块、位图块等系统块）
+  uint ninodes;      // inode 节点数量，目前 NINODES 为 200，也就是说 xv6 最多能创建 200 个文件/目录
+  uint nlog;         // 日志区的块数量，当前 LOGSIZE 固定为 30
+  uint logstart;     // 日志区起始块号，由于日志区、inode区的大小是固定的，所以下面几个值都可以通过计算得到，把它们看做常量好了
+  uint inodestart;   // inode 区起始块号，可看做常量
+  uint bmapstart;    // 位图区起始块号，可看做常量
+};
+</code></pre>
+</li>
+<li>跟在 <strong>superblock</strong> 后面的是 <strong>日志区（log area）</strong>，大小由 <code>LOGSIZE</code> 常量决定，它主要负责文件操作的 <strong>原子性</strong> 和 <strong>一致性</strong>，系统挂了也可以通过磁盘上的日志区可以恢复磁盘状态（<em>比较重要的知识点，但和本文关系不大，可以忽略</em>）。</li>
+<li>日志区后面是 <strong>inode 区</strong>，它是本小节要关注的重点，可以说，<strong>xv6 的整个文件系统都是围绕 inode 构建的，理解 inode 的工作机制，就能理解 xv6 文件系统的基本原理。</strong><pre><code class="language-c">kernel/fs.h
+struct dinode {
+  short type;           // 文件类型，0=未使用，1=普通文件，2=目录，3=设备
+  short major;          // 主设备号，标识设备类型，文件类型为设备时有效
+  short minor;          // 次设备号，标识具体设备，同样文件类型为设备时有效
+  short nlink;          // 硬链接数，表示该 inode 被多少个人用了
+                        // 如果当前 inode 是文件，表示指向该文件的硬链接数量
+                        // 如果当前 inode 是目录，每创建一个子目录，父目录的 nlink 加 1，初始值为 2（代表 &quot;.&quot; 和 &quot;..&quot;），因为子目录的 &quot;..&quot; 指向父目录
+  uint size;           // 表示文件包含的字节数，或者所有目录项（dirent结构体）占用的总字节数
+  uint addrs[NDIRECT+1];   // 数据块地址数组：
+                          // 前12个是直接块地址
+                          // 最后一个是间接块地址
+};
+</code></pre>
+</li>
+<li>再然后是 <strong>bitmap 块</strong>，占用一个 block，用来标记磁盘中哪些块已经被 <strong>使用（bit=1）</strong>，哪些块是 **空闲（bit=0）**的，最大可管理 1024 * 8 = 8192个块（<em>实验无关，可忽略</em>）。</li>
+<li>分区的最后一块是 <strong>数据区（data area）</strong>，它用来存储 <strong>文件的数据</strong> 或者是 <strong>目录的内容（dirent 数组）</strong></li>
+</ol>
+<p><strong>数据区（data area）</strong> 存储两种类型的内容：</p>
+<ul>
+<li>普通文件的数据</li>
+<li>目录的内容（dirent 数组）</li>
+</ul>
+<p>如果存储的是 “<strong>文件</strong>”，假设有个 “<strong>杭州彭于晏名单.txt</strong>” 的文件，内容是：&quot;<strong>yibaoshan</strong>&quot;</p>
+<p>该文件在磁盘中会被分两份保存，一份是实际的 <strong>数据块</strong> 保存在 <strong>数据区</strong>，另一份是 <strong>inode</strong>，保存在磁盘的 <strong>inodes 区</strong>，inode 结构是：</p>
+<pre><code class="language-c">type = T_FILE
+size = 9          // 9个字母，实际占用 9 个字节
+addrs[0] = 100    // 指向数据块 100
+addrs[1-11] = 0   // 未使用
+</code></pre>
+<p>数据区 index = 100 的 <strong>数据块</strong> 的内容为：</p>
+<pre><code class="language-c">[yibaoshan]     // 实际的数据，一个 block 最大的大小是 1024 byte
+</code></pre>
+<p>如果存储的是 “<strong>目录</strong>”，我们假设有一个目录 “<strong>/home</strong>”，它在磁盘中也会被分为两份保存，其中 inode 结构为：</p>
+<pre><code class="language-c">type = T_DIR      // 注意类型，这里是目录
+size = 64         // 单个目录项占用 16 个自己，4 * 16 
+addrs[0] = 200    // 指向数据块 200
+</code></pre>
+<p>数据区 index = 200 数据块里面的内容是 <strong>dirent 数组</strong></p>
+<p>目录和文件存的内容不太一样，文件块里面就是文件的内容，无特定格式，目录都是以 <strong><code>struct dirent</code></strong> 结构体的格式保存的，<code>inum</code> 作为目录的唯一 ID，<code>name</code> 是目录的名称，这样就可以区分同名目录，比如 “<code>.</code>” “<code>..</code>” 谁是谁了。</p>
+<pre><code class="language-c">struct dirent[4] = {
+{inum: 23, name: &quot;.&quot;    }, // 指向自己，每个目录都默认配 &quot;.&quot;、&quot;..&quot; 这俩目录，如果是根目录，&quot;.&quot;、&quot;..&quot; 这俩都会指向自己
+{inum: 1,  name: &quot;..&quot;   }, // 指向爸爸
+{inum: 45, name: &quot;user1&quot;},
+{inum: 46, name: &quot;user2&quot;}
+}
+</code></pre>
+<p>小结一下，xv6 把磁盘分为：<strong><s>引导扇区</s></strong>、<strong>超级块</strong>、<strong><s>log 区</s></strong>、<strong>inode 区</strong>、<strong><s>bitmap 块</s></strong>、<strong>数据区</strong>，共 6 个区</p>
+<p><strong>超级块</strong> 用来统计磁盘使用情况，<strong>inode 区</strong> 用来描述系统内有多少个文件和目录，<strong>数据区</strong> 则用来存储文件内容或者目录结构，其他几个区和实验关系不大忽略不管。</p>
+<h3 id="2-xv6-文件系统是如何工作的">2、xv6 文件系统是如何工作的？</h3>
+<p>ummmmm，不想写了，自己看源码吧</p>
+<ul>
+<li><strong>mkfs/mkfs.c</strong>，xv6 的文件系统镜像创建工具，用于 初始化文件系统、创建文件系统镜像文件（<code>fs.img</code>）、初始化 <strong>超级块</strong>、<strong>inode区</strong>、<strong>bitmap块</strong> 等等</li>
+<li><strong>kernel/fs.h</strong>，文件系统的关键数据结构都在这儿，包含 <code>superblock</code>、<code>dinode</code>、<code>dirent</code> 等</li>
+<li><strong>kernel/fs.c</strong>，filesystem，文件系统的核心功能实现，主要是 <strong>inode 操作</strong>、<strong>块分配</strong> 等</li>
+<li><strong>kernel/sysfile.c</strong>，提供给用户的文件相关的系统调用，常见的如 <code>open()</code>、<code>read()</code>、<code>write()</code>、<code>link()</code> 等等。</li>
+<li><strong>kernel/file.h、file.c</strong>，封装文件操作相关结构体和函数，文件系统的中间层，主要是提供给操作系统内核使用的<pre><code class="language-c">用户程序 
+   ↓
+系统调用（sysfile.c）
+   ↓
+文件抽象层（file.c）
+   ↓
+具体实现（fs.c, pipe.c, console.c等）
+</code></pre>
+</li>
+<li><strong>kernel/log.c</strong>，日志的实现，保证文件操作不会丢失</li>
+<li><strong>kernel/virtio_disk.c</strong>，磁盘驱动，封装块级别的读写 api</li>
+</ul>
+<h1 id="large-files-moderate">Large files (moderate)</h1>
+<p>In this assignment you'll increase the maximum size of an xv6 file. Currently xv6 files are limited to 268 blocks, or 268*BSIZE bytes (BSIZE is 1024 in xv6). This limit comes from the fact that an xv6 inode contains 12 &quot;direct&quot; block numbers and one &quot;singly-indirect&quot; block number, which refers to a block that holds up to 256 more block numbers, for a total of 12+256=268 blocks.</p>
+<p>干活干活，开始做实验了。</p>
+<p><strong>Large files 目标是扩大 xv6 文件系统的单个文件最大容量：通过添加 二级间接块（doubly-indirect block）来实现，把当前的 268 个块的限制扩展到 65803 个块。</strong></p>
+<p>简单题，实现思路是把 inode 结构从 <strong><code>12 个直接块</code> + <code>1 个一级间接块</code></strong>，改为 <strong><code>11 个直接块</code> + <code>1 个一级间接块</code> + <code>1 个二级间接块</code></strong></p>
+<p>首先来修改 fs.h 的 <code>dinode</code> 结构：</p>
+<pre><code class="language-c">#define NDIRECT 11 // 改为 11
+#define NINDIRECT (BSIZE / sizeof(uint))
+#define NDINDIRECT (NINDIRECT * NINDIRECT) // 新增二级间接块容量
+#define MAXFILE (NDIRECT + NINDIRECT + NDINDIRECT) // 新增最大文件容量限制
+
+// On-disk inode structure
+struct dinode {
+  short type;           // File type
+  short major;          // Major device number (T_DEVICE only)
+  short minor;          // Minor device number (T_DEVICE only)
+  short nlink;          // Number of links to inode in file system
+  uint size;            // Size of file (bytes)
+  uint addrs[NDIRECT + 2];   // 改为 11个直接块 + 1个间接块 + 1个二级间接块
+};
+</code></pre>
+<p>同时，file.c 的 <code>inode</code> 结构也要同步修改：</p>
+<pre><code class="language-c">kernel/file.h
+struct inode {
+  uint dev;           // 设备号：inode所在的设备
+  uint inum;          // inode编号：在inode表中的索引
+  int ref;           // 引用计数：有多少进程在使用这个inode
+  struct sleeplock lock; // 睡眠锁：保护inode的内容
+  int valid;         // 有效标志：inode是否从磁盘加载
+
+  // 以下字段从dinode复制而来
+  short type;        // 文件类型
+  short major, minor;// 设备号
+  short nlink;       // 硬链接数
+  uint size;        // 文件大小
+  uint addrs[NDIRECT+2]; // 改动点！！
+};
+</code></pre>
+<p>最后来修改 fs.c 文件系统中映射 inode 的 <code>bmap()</code> 函数和释放 <code>itrunc()</code> 函数，让它们支持二级间接块（<em>参考一级的映射和释放逻辑</em>）</p>
+<pre><code class="language-c">static uint
+bmap(struct inode *ip, uint bn)
+{
+  uint addr, *a;        // addr 存储物理块号，a 用于访问缓冲区
+
+  // 处理直接块，如果块不存在，创建一个新的并返回
+  if(bn &lt; NDIRECT){
+    if((addr = ip-&gt;addrs[bn]) == 0)
+      ip-&gt;addrs[bn] = addr = balloc(ip-&gt;dev);
+    return addr;
+  }
+  
+  // 原一级间接块逻辑
+  if(bn &lt; NINDIRECT){
+    // Load indirect block, allocating if necessary.
+    ...
+  }
+
+  bn -= NINDIRECT;
+
+  // 二级间接块，参考一级间接块处理的逻辑
+  if(bn &lt; NDINDIRECT){
+    if((addr = ip-&gt;addrs[NDIRECT + 1]) == 0)
+      ip-&gt;addrs[NDIRECT + 1] = addr = balloc(ip-&gt;dev); // 二级间接块未分配，分配新块
+    bp = bread(ip-&gt;dev, addr);
+    a = (uint*)bp-&gt;data;
+    uint index = bn / NINDIRECT;
+    if((addr = a[index]) == 0){ // 再次 check 一级间接块，确保一级间接块存在，不存在则分配
+      a[index] = addr = balloc(ip-&gt;dev);
+      log_write(bp);
+    }
+    brelse(bp);
+
+    bp = bread(ip-&gt;dev, addr);
+    a = (uint*)bp-&gt;data;
+    index = bn % NINDIRECT;
+    if((addr = a[index]) == 0){  // 确保数据块存在，不存在也要分配
+      a[index] = addr = balloc(ip-&gt;dev); 
+      log_write(bp);
+    }
+    brelse(bp);
+    return addr;
+  }
+
+  panic(&quot;bmap: out of range&quot;);
+}
+
+void
+itrunc(struct inode *ip)
+{
+  // 释放一级间接块(12-267)逻辑
+  if(ip-&gt;addrs[NDIRECT]){
+   ...
+  }
+
+  if(ip-&gt;addrs[NDIRECT+1]){ // 如果二级间接块存在
+    bp = bread(ip-&gt;dev, ip-&gt;addrs[NDIRECT+1]);
+    a = (uint*)bp-&gt;data;
+    // 遍历所有一级间接块
+    for(i = 0; i &lt; NINDIRECT; i++){
+      if(a[i]){
+        struct buf *bp2 = bread(ip-&gt;dev, a[i]);
+        uint *a2 = (uint*)bp2-&gt;data;
+        for(j = 0; j &lt; NINDIRECT; j++){
+          if(a2[j]) // 如果数据块存在，执行释放
+            bfree(ip-&gt;dev, a2[j]);
+        }
+        brelse(bp2);
+        bfree(ip-&gt;dev, a[i]);
+      }
+    }
+    brelse(bp);
+    // 这里不要忘了释放二级间接块本身
+    bfree(ip-&gt;dev, ip-&gt;addrs[NDIRECT+1]);
+    ip-&gt;addrs[NDIRECT+1] = 0;
+  }
+
+  ip-&gt;size = 0;
+  iupdate(ip);
+}
+</code></pre>
+<p>代码写完了，<code>make qemu</code> 编译，先执行 <code>bigfile</code>：</p>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1745307490733.png" alt="" loading="lazy"></figure>
+<p>再执行 <code>usertests</code></p>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1745307497985.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/4ca511e47b87010315fe5d5bdf61ef60f6bafdb2</p>
+<h1 id="symbolic-links-moderate">Symbolic links (moderate)</h1>
+<p>In this exercise you will add symbolic links to xv6. Symbolic links (or soft links) refer to a linked file by pathname; when a symbolic link is opened, the kernel follows the link to the referred file. Symbolic links resembles hard links, but hard links are restricted to pointing to file on the same disk, while symbolic links can cross disk devices. Although xv6 doesn't support multiple devices, implementing this system call is a good exercise to understand how pathname lookup works.</p>
+<p><strong>实现一个 <code>symlink</code> 系统调用，模仿类似 Linux 软链接的功能，关于硬链接和软链接介绍可以查看：https://gnu-linux.readthedocs.io/zh/latest/Chapter03/00_link.html</strong></p>
+<p>核心逻辑比较简单，需要对 <strong><code>sysfile.c-&gt;sys_open()</code></strong> 系统调用函数进行改造：</p>
+<pre><code class="language-c">uint64
+sys_open(void)
+{
+  ...
+  if(omode &amp; O_CREATE){
+    ip = create(path, T_FILE, 0, 0);
+    if(ip == 0){
+      end_op();
+      return -1;
+    }
+  } else {
+    if((ip = namei(path)) == 0){
+      end_op();
+      return -1;
+    }
+    ilock(ip);
+    
+    // 新增部分，处理符号链接
+    int depth = 0; // 解析深度上限
+    char target[MAXPATH];
+    // 尝试解析符号链接（最多解析10层）
+    while(depth &lt; 10 &amp;&amp; ip-&gt;type == T_SYMLINK &amp;&amp; !(omode &amp; O_NOFOLLOW)) {
+      // 读取链接目标路径
+      if(readi(ip, 0, (uint64)target, 0, MAXPATH) &lt;= 0) {
+        iunlockput(ip);
+        end_op();
+        return -1;
+      }
+      iunlockput(ip);
+      
+      if((ip = namei(target)) == 0) { // 查找目标文件
+        end_op();
+        return -1;
+      }
+      ilock(ip);
+      depth++;
+    }
+
+    if(depth &gt;= 10) {
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+
+    if(ip-&gt;type == T_DIR &amp;&amp; omode != O_RDONLY){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+  }
+
+  ...
+  return fd;
+}
+</code></pre>
+<p>然后是增加系统调用和常亮补充：</p>
+<pre><code class="language-c">kernel/fcntl.h
+...
+#define O_TRUNC   0x400
+#define O_NOFOLLOW 0x800  // 不跟随符号链接
+
+kernel/stat.h
+...
+#define T_DEVICE  3   // Device
+#define T_SYMLINK 4   // 符号链接标识
+
+kernel/syscall.h
+...
+#define SYS_close  21
+#define SYS_symlink  22
+
+kernel/syscall.c
+...
+extern uint64 sys_uptime(void);
+extern uint64 sys_symlink(void);
+
+static uint64 (*syscalls[])(void) = {
+...
+[SYS_close]   sys_close,
+[SYS_symlink]   sys_symlink,
+};
+
+user/user.h
+// system calls
+...
+int uptime(void);
+int symlink(const char*, const char*);
+
+user/usys.pl
+...
+entry(&quot;uptime&quot;);
+entry(&quot;symlink&quot;);
+
+/Makefile
+UPROGS=\
+    ...
+	$U/_zombie\
+	$U/_symlinktest\
+</code></pre>
+<p>搞定，<code>make qemu</code> 编译，执行 <code>symlinktest</code>：</p>
+<figure data-type="image" tabindex="4"><img src="https://yibaoshan.github.io//post-images/1745307507542.png" alt="" loading="lazy"></figure>
+<p>再执行 <code>usertests</code></p>
+<figure data-type="image" tabindex="5"><img src="https://yibaoshan.github.io//post-images/1745307517254.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/beedcaedff00cc0c6aeca7726dbc0f6b8de5d324</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Wings：https://blog.wingszeng.top/series/learning-mit-6-s081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab8-locks/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab8 Locks（锁优化 | 并发安全）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

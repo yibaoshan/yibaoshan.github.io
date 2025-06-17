@@ -1,0 +1,733 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab8 Locks（锁优化 | 并发安全） | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab8 Locks（锁优化 | 并发安全）
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-04-15 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>本篇是 MIT6.S081 2020 操作系统课程 Lab8 的实验笔记，目标是在保证并发安全的前提下，重新设计 <strong>内存分配器</strong> 和 <strong>块缓存</strong> 这两个部分代码，提高系统并发性能。</p>
+<p>对于有项目经验的同学来说，实验的难度不算高，重点在于找出 <strong>“哪些操作有并发安全问题”</strong> 需要加锁，实验也没有涉及到新的知识点，直接动手做就行了。</p>
+<blockquote>
+<ul>
+<li>Lab8 地址：https://pdos.csail.mit.edu/6.828/2020/labs/lock.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/lock</li>
+</ul>
+</blockquote>
+<p>在开始实验之前，你需要（<em>上一节看过就不用看了</em>）：</p>
+<ol>
+<li>观看 Lecture 10 课程录播视频：<strong>Multiprocessors and Locks（多处理器和锁）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=NGXu3vN7yAk</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=9</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec10-multiprocessors-and-locking</li>
+</ul>
+</li>
+<li>阅读 <a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c3/s0.html">《xv6 book》</a> 第六章： <strong>Lock</strong>
+<ul>
+<li>英文原版：https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf</li>
+<li>中译版：https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c6/s0.html</li>
+</ul>
+</li>
+</ol>
+<h1 id="memory-allocator-moderate">Memory allocator (moderate)</h1>
+<p>The program user/kalloctest stresses xv6's memory allocator: three processes grow and shrink their address spaces, resulting in many calls to kalloc and kfree. kalloc and kfree obtain kmem.lock. kalloctest prints (as &quot;#fetch-and-add&quot;) the number of loop iterations in acquire due to attempts to acquire a lock that another core already holds, for the kmem lock and a few other locks. The number of loop iterations in acquire is a rough measure of lock contention. The output of kalloctest looks similar to this before you complete the lab:</p>
+<pre><code>$ kalloctest
+start test1
+test1 results:
+--- lock kmem/bcache stats
+lock: kmem: #fetch-and-add 83375 #acquire() 433015
+lock: bcache: #fetch-and-add 0 #acquire() 1260
+--- top 5 contended locks:
+lock: kmem: #fetch-and-add 83375 #acquire() 433015
+lock: proc: #fetch-and-add 23737 #acquire() 130718
+lock: virtio_disk: #fetch-and-add 11159 #acquire() 114
+lock: proc: #fetch-and-add 5937 #acquire() 130786
+lock: proc: #fetch-and-add 4080 #acquire() 130786
+tot= 83375
+test1 FAIL
+</code></pre>
+<p><strong>重新设计 内存分配器 这部分的代码，测试程序 user/kalloctest 会使用 3 个进程，分别执行 申请 和 释放 内存的操作，从而测试 内存分配器的 并发安全。</strong></p>
+<h3 id="实验思路">实验思路</h3>
+<p>原先操作内存用到的是 kmem 结构体，里面维护一个 <strong>自旋锁</strong> 和一个 <strong>空闲内存链表</strong></p>
+<pre><code class="language-c">kernel/kalloc.c
+struct {
+  struct spinlock lock; // 内存分配锁
+  struct run *freelist; // 维护空闲内存的链表
+} kmem; 
+</code></pre>
+<p><strong>申请/释放</strong> 内存实际是对 <code>freelist</code> 链表的读写操作，大家都在一口锅里面吃饭，所以，为了并发安全，多 CPU 操作链表时需要加锁。</p>
+<pre><code class="language-c">void
+kfree(void *pa)
+{
+  struct run *r = (struct run*)pa;
+  acquire(&amp;kmem.lock); // 加锁
+  r-&gt;next = kmem.freelist; // 释放页 next 指针指向链表
+  kmem.freelist = r; // 释放的空页重新加到链表的头部
+  release(&amp;kmem.lock); // 解锁
+}
+
+void *
+kalloc(void)
+{
+  struct run *r;
+  acquire(&amp;kmem.lock); // 加锁
+  r = kmem.freelist; // 从链表头取一个空闲页
+  if(r)
+    kmem.freelist = r-&gt;next; // 从链表头移除这个空闲页
+  release(&amp;kmem.lock);
+  return (void*)r;
+}
+</code></pre>
+<p>同一时间只能有一个 CPU 操作内存，效率太低，实验要求对这块代码进行优化：</p>
+<ol>
+<li><strong>让每个 CPU 维护一个属于自己的 空闲内存列表，申请 和 释放 都只操作自己的 空闲内存列表 ，从而提高并发性能。</strong>
+<ul>
+<li>系统默认由 CPU0 执行初始化内存，因此，刚启动时 可用内存 全部在 CPU0 的链表上。其他 CPU 执行到 <code>kalloc()</code> 时，会按顺序从其他 CPU 的 空闲内存列表 中拉取（<em>刚开始往往会会从 CPU0 的链表中取，因为只有它有空闲</em>）。</li>
+</ul>
+</li>
+<li><strong>如果自个儿的 空闲内存列表 空了，没有可用内存了，去其他 CPU 的空闲内存列表中去 “抢”。</strong>
+<ul>
+<li>操作自己的链表也需要加锁，因为其他 CPU 没内存了可能会过来抢我们的。</li>
+</ul>
+</li>
+</ol>
+<h3 id="代码实现">代码实现</h3>
+<p>第一步，把 kmem 结构体改为数组形式，让每个 CPU 维护自己的 空闲内存列表</p>
+<pre><code class="language-c">kernel/kalloc.c
+struct {
+    struct spinlock lock;
+    struct run *freelist;
+} kmem[NPROC]; // 每个 CPU 都拥有自个儿的可用内存链表
+</code></pre>
+<p>原先初始化锁的地方改为：</p>
+<pre><code class="language-c">void
+kinit() {
+//  initlock(&amp;kmem.lock, &quot;kmem&quot;);
+    for (int i = 0; i &lt; NPROC; i++)
+        initlock(&amp;kmem[i].lock, &quot;kmem&quot;); // 初始化每个 CPU 的锁
+    freerange(end, (void *) PHYSTOP);
+}
+</code></pre>
+<p>然后是 申请 和 释放 内存操作，按照代码顺序，先改 <strong>释放 <code>kfree()</code></strong></p>
+<pre><code class="language-c">void
+kfree(void *pa) {
+    struct run *r;
+    int id = cpuid();
+
+    if (((uint64) pa % PGSIZE) != 0 || (char *) pa &lt; end || (uint64) pa &gt;= PHYSTOP)
+        panic(&quot;kfree&quot;);
+
+    // Fill with junk to catch dangling refs.
+    memset(pa, 1, PGSIZE);
+
+    r = (struct run *) pa;
+
+   // 原来的逻辑，加锁，然后把空闲页加到链表的头部，释放锁，搞定
+//  acquire(&amp;kmem.lock);
+//  r-&gt;next = kmem.freelist;
+//  kmem.freelist = r;
+//  release(&amp;kmem.lock);
+
+    // 改为，把空闲页加入到正在执行的 CPU 的链表中
+    acquire(&amp;kmem[id].lock);
+    r-&gt;next = kmem[id].freelist;
+    kmem[id].freelist = r;
+//    printf(&quot;cpu %d free 1 page\n&quot;, id);
+    release(&amp;kmem[id].lock);
+}
+</code></pre>
+<p>把已经释放的空闲页，随机加入某个 CPU 的链表中（<em>取决于哪个 CPU 执行的释放</em>）</p>
+<p>接着是 <strong>申请内存 <code>kalloc()</code></strong></p>
+<pre><code class="language-c">void *
+kalloc(void) {
+    struct run *r = 0;
+
+    // 原来的逻辑，加锁，然后从链表头取一个空闲页，释放锁
+//  acquire(&amp;kmem.lock);
+//  r = kmem.freelist;
+//  if(r)
+//    kmem.freelist = r-&gt;next;
+//  release(&amp;kmem.lock);
+
+    // 改为，优先从当前 CPU（curid）中获取一个空闲页，如果失败，从当前 CPU 右手边开始遍历，直到找到一页或者都没有可用内存
+    for (int i = 0, curid = cpuid(); i &lt; NPROC &amp;&amp; !r; i++, curid++) {
+        if (curid == NPROC)
+            curid = 0; // 环形遍历
+        acquire(&amp;kmem[curid].lock);
+        r = kmem[curid].freelist;
+        if (r) {
+            kmem[curid].freelist = r-&gt;next;
+//            printf(&quot;cpu %d steal 1 page from cpu %d\n&quot;, cpuid(), curid);
+        }
+        release(&amp;kmem[curid].lock);
+    }
+
+    if (r)
+        memset((char *) r, 5, PGSIZE); // fill with junk
+    return (void *) r;
+}
+</code></pre>
+<ol>
+<li><strong>优先尝试从 <code>curid</code>（当前 CPU）中获取一个空闲页。</strong></li>
+<li><strong>如果成功，把该页从链表头移除，不满足循环条件，退出循环。</strong></li>
+<li><strong>如果失败，从当前 CPU 右手边继续向下遍历，直到找到一页空闲内存，或者全部 CPU 都没有可用内存，退出循环。</strong></li>
+</ol>
+<p>代码写完了，<code>make qemu</code> 编译，执行 <code>kalloctest</code> 查看结果</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1744704848164.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/bef38c1a26bfa3a668ccadcc3afa8bdc876c0917</p>
+<h1 id="buffer-cache-hard">Buffer cache (hard)</h1>
+<p>If multiple processes use the file system intensively, they will likely contend for bcache.lock, which protects the disk block cache in kernel/bio.c. bcachetest creates several processes that repeatedly read different files in order to generate contention on bcache.lock; its output looks like this (before you complete this lab):</p>
+<pre><code>$ bcachetest
+start test0
+test0 results:
+--- lock kmem/bcache stats
+lock: kmem: #fetch-and-add 0 #acquire() 33035
+lock: bcache: #fetch-and-add 16142 #acquire() 65978
+--- top 5 contended locks:
+lock: virtio_disk: #fetch-and-add 162870 #acquire() 1188
+lock: proc: #fetch-and-add 51936 #acquire() 73732
+lock: bcache: #fetch-and-add 16142 #acquire() 65978
+lock: uart: #fetch-and-add 7505 #acquire() 117
+lock: proc: #fetch-and-add 6937 #acquire() 73420
+tot= 16142
+test0: FAIL
+start test1
+test1 OK
+</code></pre>
+<p>You will likely see different output, but the number of acquire loop iterations for the bcache lock will be high. If you look at the code in kernel/bio.c, you'll see that bcache.lock protects the list of cached block buffers, the reference count (b-&gt;refcnt) in each block buffer, and the identities of the cached blocks (b-&gt;dev and b-&gt;blockno).</p>
+<pre><code>$ bcachetest
+start test0
+test0 results:
+--- lock kmem/bcache stats
+lock: kmem: #fetch-and-add 0 #acquire() 32954
+lock: kmem: #fetch-and-add 0 #acquire() 75
+lock: kmem: #fetch-and-add 0 #acquire() 73
+lock: bcache: #fetch-and-add 0 #acquire() 85
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 4159
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 2118
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 4274
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 4326
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 6334
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 6321
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 6704
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 6696
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 7757
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 6199
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 4136
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 4136
+lock: bcache.bucket: #fetch-and-add 0 #acquire() 2123
+--- top 5 contended locks:
+lock: virtio_disk: #fetch-and-add 158235 #acquire() 1193
+lock: proc: #fetch-and-add 117563 #acquire() 3708493
+lock: proc: #fetch-and-add 65921 #acquire() 3710254
+lock: proc: #fetch-and-add 44090 #acquire() 3708607
+lock: proc: #fetch-and-add 43252 #acquire() 3708521
+tot= 128
+test0: OK
+start test1
+test1 OK
+$ usertests
+  ...
+ALL TESTS PASSED
+$
+</code></pre>
+<p>Please give all of your locks names that start with &quot;bcache&quot;. That is, you should call initlock for each of your locks, and pass a name that starts with &quot;bcache&quot;.</p>
+<p>本实验涉及到一个新的模块：<strong>Buffer cache</strong>（<em><strong>磁盘 I/O 缓存</strong></em>）</p>
+<p>代码实现在 kernel/bio.c 文件中，Buffer cache 是为了减少磁盘的 I/O 操作，提高性能：</p>
+<ol>
+<li><strong>读文件的时候，先检查读的部分是否已经在缓存中，如果是则直接返回，如果不在缓存中，则分配一个新的缓冲区，从磁盘读取数据。</strong></li>
+<li><strong>写的时候，也是先修改缓冲区中的数据（如果有的话），然后等待某个时机调用 <code>bwrite()</code> 函数将缓冲区的内容真正写到磁盘。</strong></li>
+</ol>
+<p>xv6 现存的 <strong>读</strong>（<code>bget</code>）、<strong>释放</strong>（<code>brelse</code>）、<strong>加减引用</strong>（<code>bpin</code>、<code>bunpin</code>）缓冲块的操作，用的都是同一把锁 <strong>bcache.lock</strong></p>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1744704860510.png" alt="" loading="lazy"></figure>
+<p><strong>如果有多个 I/O 密集型程序在执行，竞争同一把锁将会成为 OS 的性能瓶颈</strong>，实验要求我们对这部分代码进行优化。</p>
+<h3 id="实验思路-2">实验思路</h3>
+<p>xv6 用 <strong>数组 + 链表</strong> 的方式来维护缓冲区，结构如下：</p>
+<pre><code class="language-c">struct buf {
+  int valid;   // has data been read from disk?
+  int disk;    // does disk &quot;own&quot; buf?
+  uint dev;
+  uint blockno;
+  struct sleeplock lock;
+  uint refcnt;
+  struct buf *prev; // LRU cache list
+  struct buf *next;
+  uchar data[BSIZE]; // BSIZE=1024
+};
+
+struct {
+  struct spinlock lock;
+  struct buf buf[NBUF]; // NBUF=30，长度为 30 的 buf 数组
+
+  // Linked list of all buffers, through prev/next.
+  // Sorted by how recently the buffer was used.
+  // head.next is most recent, head.prev is least.
+  struct buf head; // 双向链表实现的 LRU，head.next 表示最近使用的，head.prev 是最久未使用的
+} bcache;
+</code></pre>
+<p><code>buf</code> 结构体里面的 <code>data</code> 字段存储的是磁盘块的内容，大小是 1024 个字节，也就是 1KB。</p>
+<p><code>bcache</code> 结构体中的 <code>buf[]</code> 数组长度是 30，也就是说 xv6 最多可以缓存 30 * 1KB = 30KB 的数据，当需要缓存第 31 个块时，需要通过 LRU 算法淘汰一个最近最少使用的块。</p>
+<p>这种 <strong>数组 + 链表</strong> 的设计在 OS 中很常见，Linux 的 <code>page cache</code> 也是类似这种设计，好处是：</p>
+<ol>
+<li><strong>预分配的数组空间，可以避免动态内存分配的开销。</strong></li>
+<li><strong>数组是连续存储，能提高缓存命中率。</strong></li>
+</ol>
+<pre><code>[数组视角]
+buf[0] buf[1] buf[2] ... buf[NBUF-1]
+  ↓     ↓      ↓          ↓
+[实际内存中的固定位置]
+
+[链表视角]
+head ↔ 最近使用 ↔ 次近使用 ↔ ... ↔ 最久未使用
+       buf[5]    buf[2]          buf[7]
+</code></pre>
+<p>扯远了，回到实验，，，</p>
+<p>本小节的目标很明确，把 bcache.lock 这把大锁 拆分 成多个小锁，降低锁竞争，我们要面临的问题：</p>
+<ol>
+<li><strong>小锁怎么拆？按什么颗粒度来拆？</strong></li>
+<li><strong>原有的全局 LRU 怎么维护？</strong><br>
+a. 如果还是放全局，操作链表的时候肯定要加锁，那就又回退到一把锁了。<br>
+b. 如果跟小锁结构走，那通信怎么解决？怎么才能知道哪块 buffer 是最少使用的？</li>
+</ol>
+<h4 id="小锁怎么拆">小锁怎么拆？</h4>
+<p>我们可以参照上一小节的 kalloc 的实现，为每一个 buffer 分配一个锁（<em>xv6 一共才 30 个 buffer，代价也不是很高</em>）。</p>
+<p>不过，实验 tips 中建议我们使用哈希桶来实现，所以这部分我们就按照实验要求来，使用 hash bucket 。</p>
+<h4 id="原有的全局-lru-怎么维护">原有的全局 LRU 怎么维护？</h4>
+<p>我的方案是废除原链表实现的 LRU 方案，改为使用时间戳 LRU，为 buffer 结构体增加一个时间戳字段</p>
+<ul>
+<li><strong>每读一次 buffer，更新 时间戳</strong></li>
+<li><strong>时间戳 值越大，说明是最近使用</strong></li>
+<li><strong>在查找可用 buffer 时，如果所有的 buffer 都在使用，根据时间戳，复用最久未使用的 buffer</strong></li>
+</ul>
+<p>思路讲完了，接下来上代码。</p>
+<h3 id="代码实现-2">代码实现</h3>
+<p>首先，为 <code>buf</code> 结构体增加一个 时间戳 字段，用来记录 buffer 的使用情况</p>
+<pre><code class="language-c">kernel/buf.h
+struct buf {
+  ...
+  uint refcnt;
+  // 废弃掉原链表节点
+//  struct buf *prev; // LRU cache list 
+//  struct buf *next;
+  uchar data[BSIZE];
+  uint timestamp;    // 新增时间戳字段
+};
+</code></pre>
+<p>然后把原来的 <code>bcache</code> 结构体改为数组，长度为质数 13</p>
+<pre><code class="language-c">kernel/bio.c
+#define NBUCKET 13  // 哈希桶数量，一般用质数
+#define NBUFFER CEIL(NBUF, NBUCKET)  // 每个桶的 buf 数量， NBUF 默认为 30，这里向上取整后结果应该是 3，即每个桶里面有 3 个 buf
+
+#define CEIL(num, divisor) (((num) + (divisor) - 1) / (divisor)) // 向上取整的宏
+
+struct {
+  struct spinlock lock;
+  struct buf buf[NBUFFER];
+//  struct buf head; 废弃
+} bcache[NBUCKET]; // 哈希桶数组，长度为 13
+
+static uint global_timestamp;  // 全局时间戳计数器
+</code></pre>
+<p>按照实验要求，<code>NBUCKET</code> 的长度为质数 13，<code>NBUFFER</code> 表示每个桶里面有多少个 buffer，它调用了自定义宏 <code>CEIL</code>，30/13 向上取整，得出每个桶里面有 3 个 buffer。</p>
+<p>第二步是初始化锁</p>
+<pre><code class="language-c">void
+binit(void)
+{
+  for (int i = 0; i &lt; NBUCKET; i++) {
+      initlock(&amp;bcache[i].lock, &quot;bcache&quot;);
+      for (int j = 0; j &lt; NBUFFER; j++) {
+          bcache[i].buf[j].timestamp = 0; // 初始化时间戳为 0
+          initsleeplock(&amp;bcache[i].buf[j].lock, &quot;buffer&quot;);
+      }
+  }
+}
+</code></pre>
+<p>第三步是对使用 bcache.lock 的地方做修改，bio.c 里面有四个函数用到了 bcache.lock，分别是 <code>bget()</code>、<code>brelse()</code>、<code>bpin()</code>、<code>bunpin()</code></p>
+<p>其中，<code>bget()</code> 有点复杂，我们放到后面讲，先把 <code>brelse()</code>、<code>bpin()</code>、<code>bunpin()</code> 这 3 个函数改完：</p>
+<pre><code class="language-c">void
+brelse(struct buf *b)
+{
+  if(!holdingsleep(&amp;b-&gt;lock))
+    panic(&quot;brelse&quot;);
+
+  int bucket_id = hash(b-&gt;blockno);
+  acquire(&amp;bcache[bucket_id].lock);
+  b-&gt;refcnt--;
+  release(&amp;bcache[bucket_id].lock);
+  releasesleep(&amp;b-&gt;lock);
+}
+
+void
+bpin(struct buf *b) {
+  int bucket_id = hash(b-&gt;blockno);
+  acquire(&amp;bcache[bucket_id].lock);
+  b-&gt;refcnt++;
+  release(&amp;bcache[bucket_id].lock);
+}
+
+void
+bunpin(struct buf *b) {
+  int bucket_id = hash(b-&gt;blockno);
+  acquire(&amp;bcache[bucket_id].lock);
+  b-&gt;refcnt--;
+  release(&amp;bcache[bucket_id].lock);
+}
+</code></pre>
+<p>这三个函数步骤都一样，<strong>先根据 <code>b-&gt;blockno</code> 计算出哈希桶的索引，然后加锁，修改 <code>refcnt</code>，再释放锁。</strong></p>
+<p>最后是改动最大的 <code>bget()</code> 函数：</p>
+<pre><code class="language-c">static struct buf*
+bget(uint dev, uint blockno)
+{
+  struct buf *b;
+  uint bucket_id = hash(blockno);
+
+  // 优先在当前哈希桶中，查找已缓存的块
+  acquire(&amp;bcache[bucket_id].lock);
+  for(int i = 0; i &lt; NBUFFER; i++) {
+    b = &amp;bcache[bucket_id].buf[i];
+    if(b-&gt;dev == dev &amp;&amp; b-&gt;blockno == blockno) {
+      b-&gt;refcnt++;
+      // 增加引用的同时，更新时间戳
+      update_timestamp(b);
+      release(&amp;bcache[bucket_id].lock);
+      acquiresleep(&amp;b-&gt;lock);
+      return b;
+    }
+  }
+  release(&amp;bcache[bucket_id].lock);
+
+  uint min_timestamp = 0xffffffff;
+  struct buf *least_used_buf = 0;
+
+  // 没有找到缓存块，和上一小节的 kalloc 一样，环形遍历所有桶，查找其他桶中未使用的空闲块
+  // 遍历所有桶的过程中，记录最少使用并且最久未使用的块
+  // 如果没有空闲块，那么就直接使用 最少使用并且最久未使用的块
+  for(int i = 0, cur_bucket = bucket_id; i &lt; NBUCKET; i++, cur_bucket++) {
+    if(cur_bucket == NBUCKET)
+      cur_bucket = 0;  // 环形遍历
+
+    acquire(&amp;bcache[cur_bucket].lock);
+    for(int j = 0; j &lt; NBUFFER; j++) {
+      b = &amp;bcache[cur_bucket].buf[j];
+      if(b-&gt;refcnt == 0) {  // 找到未使用的块
+        b-&gt;dev = dev;
+        b-&gt;blockno = blockno;
+        b-&gt;valid = 0;
+        b-&gt;refcnt = 1;
+        update_timestamp(b);
+
+        release(&amp;bcache[cur_bucket].lock);
+        acquiresleep(&amp;b-&gt;lock);
+        return b;
+      }
+
+      //更新 最久未使用的 buffer
+      if(b-&gt;timestamp &lt; min_timestamp) {
+        min_timestamp = b-&gt;timestamp;
+        least_used_buf = b;
+      }
+    }
+    release(&amp;bcache[cur_bucket].lock);
+  }
+
+  // 其他桶里面也没有空闲块，那就只能使用 最久未使用的 buffer
+  if(least_used_buf) {
+    acquire(&amp;bcache[bucket_id].lock);
+    // 一大堆赋值和初始化操作
+    least_used_buf-&gt;dev = dev;
+    least_used_buf-&gt;blockno = blockno;
+    least_used_buf-&gt;valid = 0;
+    least_used_buf-&gt;refcnt = 1;
+    update_timestamp(least_used_buf);
+    release(&amp;bcache[bucket_id].lock);
+    acquiresleep(&amp;least_used_buf-&gt;lock);
+    return least_used_buf;
+  }
+
+  panic(&quot;bget: no buffers&quot;);
+}
+</code></pre>
+<p><code>bget()</code> 函数逻辑几乎全部推翻重写，它一共干了三件事：</p>
+<ol>
+<li><strong>在当前哈希桶中，查找已缓存的块，如果命中，就直接返回该块，并更新时间戳。</strong></li>
+<li><strong>没有命中缓存块，则尝试分配一个空闲 buffer</strong>
+<ul>
+<li>环形遍历所有桶，包括自身，查找桶中是否有未使用的 buffer。</li>
+<li>有空闲 buffer，增加引用并更新时间戳并返回该 buffer。</li>
+<li>遍历过程中，记录并更新 最久未使用的块，</li>
+</ul>
+</li>
+<li><strong>所有哈希桶中，都找不到空闲 buffer，那么，复用记录的最久未使用的 buffer。</strong></li>
+</ol>
+<p>补充剩余的工具函数</p>
+<pre><code class="language-c">kernel/defs.h
+// bio.c
+...
+void            bunpin(struct buf*);
+uint            hash(uint);
+void            update_timestamp(struct buf*);
+</code></pre>
+<pre><code class="language-c">kernel/bio.c
+uint
+hash(uint blockno)
+{
+    return blockno % NBUCKET;
+}
+
+void
+update_timestamp(struct buf *b)
+{
+    // 这里 global_timestamp 会有溢出问题，暂不考虑优化
+    b-&gt;timestamp = __sync_fetch_and_add(&amp;global_timestamp, 1);
+//    printf(&quot;time %d\n&quot;,b-&gt;timestamp);
+}
+</code></pre>
+<p>代码写完了，<code>make qemu</code> 编译，执行 <code>bcachetest</code> 查看结果</p>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1744704869979.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/12ea059da0cc8853c365b491190a01bd56d78550</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Wings：https://blog.wingszeng.top/series/learning-mit-6-s081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab7-multithreading/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab7 Multithreading（进程调度）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

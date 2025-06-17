@@ -1,0 +1,738 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab7 Multithreading（进程调度） | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab7 Multithreading（进程调度）
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-04-10 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>本篇是 MIT6.S081 操作系统课程 Lab7 的实验笔记，任务是模仿内核进程切换，写一个用户级线程切换功能。同时，我也会结合源码，介绍 xv6 是如何完成进程切换的。</p>
+<blockquote>
+<ul>
+<li>Lab7 地址：https://pdos.csail.mit.edu/6.828/2020/labs/thread.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/thread</li>
+</ul>
+</blockquote>
+<p>在开始实验之前，你需要：</p>
+<ol>
+<li>观看 Lecture 10 课程录播视频：<strong>Multiprocessors and Locks（多处理器和锁）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=NGXu3vN7yAk</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=9</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec10-multiprocessors-and-locking</li>
+</ul>
+</li>
+<li>阅读 <a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c3/s0.html">《xv6 book》</a> 第六章： <strong>Lock</strong>
+<ul>
+<li>英文原版：https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf</li>
+<li>中译版：https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c6/s0.html</li>
+</ul>
+</li>
+<li>观看 Lecture 11 课程录播视频：<strong>Thread Switching（线程切换）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=vsgrTHY5tkg</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=10</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec11-thread-switching-robert</li>
+</ul>
+</li>
+<li>阅读 <a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c3/s0.html">《xv6 book》</a> 第七章： <strong>Scheduling（调度）</strong>
+<ul>
+<li>英文原版：https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf</li>
+<li>中译版：https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c7/s0.html</li>
+</ul>
+</li>
+</ol>
+<h1 id="xv6-如何是完成进程切换的">xv6 如何是完成进程切换的？</h1>
+<p>Lab7 是最近几个实验里面，难度最低的，甚至比 Lab1 还要简单。不过，要想顺利完成 Lab7，我们需要对 xv6 的 “<strong>进程切换机制</strong>” 有个基本的了解。</p>
+<p>xv6 进程切换主要依赖两个函数，调度器 <code>scheduler()</code> 和汇编实现的 <code>swtch()</code>：</p>
+<ol>
+<li><strong><code>scheduler()</code>：调度器函数，功能是遍历进程表，寻找一个处于 <code>runnable</code> 状态的进程，然后调用 <code>swtch()</code> 切换到该进程。</strong></li>
+<li><strong><code>swtch()</code>：上下文切换函数，汇编代码 swtch.S 实现，入参是两个 <code>context</code> 结构体 <code>old</code> 和 <code>new</code>，用于交换两个进程的上下文（把当前 CPU 状态写入 <code>old</code>，再把 <code>new</code> 代表的目标进程的写到 CPU，完成切换）。</strong></li>
+</ol>
+<h3 id="1-swtch">1、swtch()</h3>
+<p><code>switch()</code> 的工作内容非常简单，切换入参的两个上下文，然后返回到新上下文 <code>ra</code> 寄存器 指向的地址继续执行。</p>
+<pre><code class="language-asm"># 上下文切换
+#
+#   void swtch(struct context *old, struct context *new);
+# 
+# 1. 保存当前寄存器到 old 中
+# 2. 从 new 中加载寄存器
+# 3. 返回到new的ra寄存器指向的地址
+
+.globl swtch
+swtch:
+        # 保存当前 CPU 的上下文到 old (a0 参数)
+        sd ra, 0(a0)    # 保存 ra 寄存器指向的函数返回地址 return address
+        sd sp, 8(a0)    # 保存栈顶位置
+        sd s0-s11...    # 保存被调用者保存的寄存器
+
+        # 加载新上下文 new (a1 参数)到 CPU
+        ld ra, 0(a1)    # 加载新的返回地址
+        ld sp, 8(a1)    # 加载新的栈指针
+        ld s0-s11...    # 加载新的寄存器值
+
+        ret             # 返回到新上下文的 ra 指定的地址（ra 已经设置过了）
+</code></pre>
+<p><code>switch()</code> 运行在 <strong>内核态</strong>，此时，用户进程的状态在切换到 <strong>内核态</strong> 的时候已经保存到 <strong><code>trapframe</code></strong> 里了，所以，这里的汇编程序只需要 <strong>保存/恢复</strong> 函数调用相关的寄存器即可。</p>
+<h3 id="2-scheduler">2、scheduler()</h3>
+<p>板子上电后，每个 CPU 都会运行从 <code>enter.S</code> -&gt; <code>start.c</code> -&gt; <code>main.c</code> -&gt; <code>scheduler()</code> 的流程。</p>
+<pre><code class="language-c">kernel/main.c
+// start() jumps here in supervisor mode on all CPUs.
+void
+main()
+{
+  if(cpuid() == 0){
+    ... // 一系列的初始化工作
+    __sync_synchronize();
+    started = 1;
+  } else {
+    while(started == 0) // 其他 CPU 等待 0 号位完成初始化再执行
+      ;
+    __sync_synchronize();
+    kvminithart();    // turn on paging 开启分页
+    trapinithart();   // install kernel trap vector 注册 trap 
+    ...
+  }
+
+  scheduler(); // 进入自己的调度器        
+}
+</code></pre>
+<ul>
+<li>对于 <strong>0 号 CPU</strong>，负责初始化 <strong>内存</strong>、<strong>进程</strong>、<strong>文件管理</strong> 以及 <strong>启动第一个用户程序</strong> 等工作，<strong>全局初始化</strong> 执行完以后，进入 <strong><code>scheduler()</code></strong>。</li>
+<li>对于其他 CPU，在等待 0 号位完成 <strong>全局初始化</strong> 后，再进行开启自己的 <strong>分页</strong>（<em>每个 CPU 的寄存器都是独立的</em>）、<strong>注册中断</strong> 等工作，最终也进入 <strong><code>scheduler()</code></strong>。</li>
+</ul>
+<p>在 xv6 中，结构体 <code>cpu</code> 保存了当前 CPU 的上下文 <code>context</code>，以及当前 CPU 正在运行的进程 <code>proc</code>。</p>
+<pre><code class="language-c">// Per-CPU state.
+struct cpu {
+  struct proc *proc;          // The process running on this cpu, or null.
+  struct context context;     // swtch() here to enter scheduler().
+};
+</code></pre>
+<p>接下来重点来了，<code>scheduler()</code> 函数的核心逻辑是：</p>
+<ol>
+<li>遍历进程表，寻找一个处于 <code>runnable</code> 状态的进程，然后调用 <code>swtch()</code> 切换到该进程。</li>
+<li>如果没有需要执行的进程，执行 <code>wfi</code> 指令，让 CPU 进入 <strong>低功耗</strong> 等待状态，直到有 <strong>中断</strong> 发生。</li>
+</ol>
+<pre><code class="language-c">void
+scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c-&gt;proc = 0;
+  for(;;){
+    // 允许中断，这样 I/O 中断才能唤醒等待的进程
+    intr_on();
+    // 遍历进程表，选取一个处于 runnable 状态的进程
+    for(p = proc; p &lt; &amp;proc[NPROC]; p++){
+      // 确保每一个进程只有一个 CPU 在修改状态
+      acquire(&amp;p-&gt;lock);
+      // 逮到了！（杨迪四川话版）
+      if(p-&gt;state == RUNNABLE){
+        p-&gt;state = RUNNING;
+        c-&gt;proc = p;
+        // 保存当前调度器（cpu-&gt;context）的状态，恢复 p-&gt;context（保存了进程 p 上次离开时的内核上下文）
+        swtch(&amp;c-&gt;context, &amp;p-&gt;context);
+        // 当进程 p 再次切回到 CPU 后，继续执行此处，即 ra 寄存器返回的地址
+        c-&gt;proc = 0;
+      }
+      release(&amp;p-&gt;lock);
+    }
+    if(nproc &lt;= 2) {   // only init and sh exist
+      intr_on();
+      asm volatile(&quot;wfi&quot;);
+    }
+  }
+}
+</code></pre>
+<p>如果有需要调度的进程，调用 <code>swtch()</code> 函数，入参 <strong><code>old</code> = <code>c-&gt;context</code></strong>，<strong><code>new</code> = <code>p-&gt;context</code></strong></p>
+<p>我们在上一小节介绍了 <code>switch</code> 汇编程序的功能：</p>
+<ol>
+<li><strong>当前 CPU 的状态，会被保存到 <code>c-&gt;context</code> 中</strong>
+<ul>
+<li>其中，<code>ra</code> 寄存器的值保存的是 <code>swtch()</code> 返回后的下一条指令地址，即 <strong><code>c-&gt;proc = 0</code></strong>。</li>
+<li>当进程 p 返回的时候， <code>ra</code> 会被恢复为调度器调用 <code>swtch()</code> 时的值，即从 <strong><code>c-&gt;proc = 0</code></strong> 处继续向下执行。</li>
+</ul>
+</li>
+<li><strong><code>p-&gt;context</code> 会被加载到 CPU，然后返回到 <code>ra</code> 寄存器指向的地址继续执行</strong>
+<ul>
+<li><code>p-&gt;context</code> <code>ra</code> 保存的是进程上次执行的位置，如果是新进程，<code>ra</code> 指向的是 <code>forkret()</code> 函数（<em><code>forkret</code> 负责完成进程创建后的收尾工作这里不向下展开</em>）</li>
+<li><code>switch</code> 汇编程序 执行最后一行 <code>ret</code> 的那一刻，进程完成了切换。</li>
+</ul>
+</li>
+</ol>
+<p>xv6 在创建新进程时，会为该进程创建一个 <strong>上下文 <code>context</code></strong>，这一步用来保证：<strong>如果一个新创建的进程首次被调度器选中，<code>p-&gt;context</code> 不会为空。</strong></p>
+<pre><code class="language-c">static struct proc*
+allocproc(void)
+{
+  ...
+  // Set up new context to start executing at forkret,
+  // which returns to user space.
+  memset(&amp;p-&gt;context, 0, sizeof(p-&gt;context));
+  p-&gt;context.ra = (uint64)forkret;
+  p-&gt;context.sp = p-&gt;kstack + PGSIZE;
+  ...
+}
+</code></pre>
+<p>开机首次从 <strong>内核 <code>schedule()</code></strong> 切换到 <strong>用户进程</strong> 的过程大概就是这样，小结一下：</p>
+<pre><code>首次切换：
+scheduler() 运行
+    ↓
+swtch(&amp;c-&gt;context, &amp;p-&gt;context)
+    ↓ 保存 scheduler() 的上下文到 c-&gt;context
+    ↓ 加载进程的上下文（从 p-&gt;context 中获取）
+    ↓ usertrapret() -&gt; trampoline.S:
+      1. 切换到用户页表
+      2. 从 trapframe 恢复所有用户寄存器
+      3. 返回用户态继续执行
+</code></pre>
+<p><strong>内核代码</strong> 切换到 <strong>用户进程</strong> 已经讲完了，接下来我们一起来看看，<strong>OS 是如何从用户进程切换回 <code>scheduler()</code> 内核代码的</strong>。</p>
+<h3 id="3-触发调度">3、触发调度</h3>
+<p>在 xv6 中，有 <strong>三个</strong> 主要入口会调用 <code>swtch()</code> 切换回 <code>scheduler()</code>：</p>
+<ol>
+<li><strong><code>yield()</code> ：主动让出 CPU</strong></li>
+</ol>
+<pre><code class="language-c">void yield(void) {
+  struct proc *p = myproc();
+  acquire(&amp;p-&gt;lock);
+  p-&gt;state = RUNNABLE;
+  sched();  // 调用 swtch 切换到 scheduler
+  release(&amp;p-&gt;lock);
+}
+</code></pre>
+<ol start="2">
+<li><strong><code>exit()</code> ：进程退出</strong></li>
+</ol>
+<pre><code class="language-c">void exit(int status) {
+  // ... 清理进程资源 ...
+  p-&gt;state = ZOMBIE;
+  release(&amp;original_parent-&gt;lock);
+  sched();  // 切换到 scheduler，永不返回
+  panic(&quot;zombie exit&quot;);
+}
+</code></pre>
+<ol start="3">
+<li><strong><code>sleep()</code> ：进程休眠</strong></li>
+</ol>
+<pre><code class="language-c">void sleep(void *chan, struct spinlock *lk) {
+  // ... 设置休眠条件 ...
+  p-&gt;chan = chan;
+  p-&gt;state = SLEEPING;
+  sched();  // 切换到 scheduler
+  // ... 唤醒后的清理工作 ...
+}
+</code></pre>
+<p>这 <strong>三个</strong> 场景都会通过调用 <code>sched</code> 函数，最终使用 <code>swtch（）</code> 切换到 <strong>内核调度器</strong>。它们代表了进程调度的三种典型情况：<strong>主动让出 CPU（<code>yield</code>）</strong>、<strong>进程终止（<code>exit</code>）</strong>、<strong>进程等待某个事件发生（<code>sleep</code>）</strong></p>
+<p>我们这一小节要讨论的是 <strong>OS 怎么切换回调度器 的</strong>，所以只关注 <strong>用户进程时间片</strong> 用完了，触发 <strong>定时器中断</strong> 的情况：</p>
+<pre><code class="language-c">void
+usertrap(void)
+{
+  // ... 
+  if(which_dev == 2) {  // 时钟中断
+    yield();
+  }
+}
+
+void
+kerneltrap(void)
+{
+  // ...
+  if(which_dev == 2 &amp;&amp; myproc() != 0 &amp;&amp; myproc()-&gt;state == RUNNING) {
+    yield();
+  }
+}
+</code></pre>
+<p>如果 which_dev == 2，说明是 <strong>时钟中断</strong>，触发了 <code>yield()</code>。</p>
+<p>定时器的时长是在 <strong>CPU0</strong> 执行初始化工作的时候设置的：</p>
+<pre><code class="language-c">kernel/start.c
+// 为每个 CPU 的时钟中断间隔为 1000,000 个 CPU 周期
+timerinit() {
+    ... 
+    int interval = 1000000; // cycles; about 1/10th second in qemu.
+    *(uint64*)CLINT_MTIMECMP(id) = *(uint64*)CLINT_MTIME + interval;
+    ...
+}
+</code></pre>
+<p>每个进程允许执行 <strong>1000,000</strong> 个 CPU 周期，到期触发 <strong>时钟中断</strong>，然后调用 <code>yield()</code>，<code>yield()</code> 又调用了 <code>sched()</code> 函数让出 CPU。</p>
+<pre><code class="language-c">void
+sched(void)
+{
+  ...
+  struct proc *p = myproc();
+  swtch(&amp;p-&gt;context, &amp;mycpu()-&gt;context);
+  ...
+}
+</code></pre>
+<p><code>sched()</code> 函数很简单，转头调用 <code>swtch()</code> 执行切换，入参 <strong><code>old</code> = <code>p-&gt;context</code></strong>，<strong><code>new</code> = <code>mycpu-&gt;context</code></strong></p>
+<ol>
+<li><strong>把当前 CPU 状态保存到正在运行进程的 context 。</strong></li>
+<li><strong>取出上次 <code>mycpu-&gt;context</code> 保存的上下文，恢复到 CPU</strong></li>
+<li><strong>switch 汇编执行最后一行 <code>ret</code> 的那一刻，切换回 <code>scheduler()</code> 继续运行（<code>c-&gt;proc = 0</code>）。</strong></li>
+</ol>
+<pre><code class="language-c">void
+scheduler(void)
+{
+  ...
+  for(;;){
+    ...
+    for(p = proc; p &lt; &amp;proc[NPROC]; p++){
+        ...
+        swtch(&amp;c-&gt;context, &amp;p-&gt;context);
+        c-&gt;proc = 0; // here!!! 我胡汉三又回来了！
+    }
+  }
+}
+</code></pre>
+<p>切回 <strong>调度器</strong> 后，<code>scheduler()</code> 继续查找 <strong>下一个</strong> 需要调度的进程，进程的时间片用完了，触发 <strong>定时器中断</strong>，调用 <code>yield()</code> 切换回 <strong>内核调度器</strong> <code>scheduler()</code>，周而复始，，，</p>
+<p>到这里，<strong>xv6 是如何完成进程切换</strong> 就全部讲完了，我们来画张图总结一下 CPU 的工作流程：</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1744288869949.png" alt="" loading="lazy"></figure>
+<p>接下来开始做实验</p>
+<h1 id="uthread-switching-between-threadsmoderate">Uthread: switching between threads(moderate)</h1>
+<p>In this exercise you will design the context switch mechanism for a user-level threading system, and then implement it. To get you started, your xv6 has two files user/uthread.c and user/uthread_switch.S, and a rule in the Makefile to build a uthread program. uthread.c contains most of a user-level threading package, and code for three simple test threads. The threading package is missing some of the code to create a thread and to switch between threads.</p>
+<p><strong>实现一个用户级线程系统中线程间的上下文切换机制，也就是让多个线程能在一个用户程序内 “切换执行”，并提供了 <code>user/uthread.c</code> 和 <code>user/uthread_switch.S</code>，你在里面填充代码即可。</strong></p>
+<p>简单题，抄 xv6 进程调度的代码就可以，打开 <strong>user/uthread.c</strong></p>
+<pre><code class="language-c">#define STACK_SIZE  8192
+#define MAX_THREAD  4
+
+// 线程上下文结构体
+struct context {
+  uint64 ra;
+  uint64 sp;
+  uint64 s0;
+  uint64 s1;
+  uint64 s2;
+  uint64 s3;
+  uint64 s4;
+  uint64 s5;
+  uint64 s6;
+  uint64 s7;
+  uint64 s8;
+  uint64 s9;
+  uint64 s10;
+  uint64 s11;
+};
+
+struct thread {
+  char       stack[STACK_SIZE]; /* the thread's stack */
+  int        state;             /* FREE, RUNNING, RUNNABLE */
+  struct     context context;  // 线程上下文
+};
+struct thread all_thread[MAX_THREAD];
+...
+
+void 
+thread_init(void)
+{
+  // main() is thread 0, which will make the first invocation to
+  // thread_schedule().  it needs a stack so that the first thread_switch() can
+  // save thread 0's state.  thread_schedule() won't run the main thread ever
+  // again, because its state is set to RUNNING, and thread_schedule() selects
+  // a RUNNABLE thread.
+  current_thread = &amp;all_thread[0];
+  current_thread-&gt;state = RUNNING;
+}
+
+void 
+thread_schedule(void)
+{
+  ...
+  if (current_thread != next_thread) {         /* switch threads?  */
+    next_thread-&gt;state = RUNNING;
+    t = current_thread;
+    current_thread = next_thread;
+    /* YOUR CODE HERE
+     * Invoke thread_switch to switch from t to next_thread:
+     * thread_switch(??, ??);
+     */
+     // 调用 thread_switch 进行上下文切换
+    thread_switch((uint64)&amp;t-&gt;context, (uint64)&amp;next_thread-&gt;context);
+  } else
+    next_thread = 0;
+}
+
+void 
+thread_create(void (*func)())
+{
+  ...
+  t-&gt;state = RUNNABLE;
+  // YOUR CODE HERE
+  // 设置新线程的上下文
+  memset(&amp;t-&gt;context, 0, sizeof(t-&gt;context));
+  t-&gt;context.ra = (uint64)func;  // 返回地址设为线程函数
+  t-&gt;context.sp = (uint64)t-&gt;stack + STACK_SIZE;  // 栈指针指向栈顶
+}
+</code></pre>
+<p><strong>user/uthread_switch.S</strong> 里面就更简单了，直接拷贝 kernel 里面的 <strong>switch.S</strong> 文件</p>
+<pre><code class="language-asm">	.text
+
+	/*
+         * save the old thread's registers,
+         * restore the new thread's registers.
+         */
+
+	.globl thread_switch
+thread_switch:
+	/* YOUR CODE HERE */
+	# a0 保存当前线程上下文的地址
+    # a1 保存下一个线程上下文的地址
+    
+    # 保存当前线程的寄存器
+    sd ra, 0(a0)
+    sd sp, 8(a0)
+    sd s0, 16(a0)
+    sd s1, 24(a0)
+    sd s2, 32(a0)
+    sd s3, 40(a0)
+    sd s4, 48(a0)
+    sd s5, 56(a0)
+    sd s6, 64(a0)
+    sd s7, 72(a0)
+    sd s8, 80(a0)
+    sd s9, 88(a0)
+    sd s10, 96(a0)
+    sd s11, 104(a0)
+
+    # 恢复下一个线程的寄存器
+    ld ra, 0(a1)
+    ld sp, 8(a1)
+    ld s0, 16(a1)
+    ld s1, 24(a1)
+    ld s2, 32(a1)
+    ld s3, 40(a1)
+    ld s4, 48(a1)
+    ld s5, 56(a1)
+    ld s6, 64(a1)
+    ld s7, 72(a1)
+    ld s8, 80(a1)
+    ld s9, 88(a1)
+    ld s10, 96(a1)
+    ld s11, 104(a1)
+	ret    /* return to ra */
+</code></pre>
+<p><code>make qemu</code> 编译，执行 <code>uthread</code> 查看结果</p>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1744288924564.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/978d71fd02928313549058f5b354180fcab200d5</p>
+<h1 id="using-threads-moderate">Using threads (moderate)</h1>
+<p>In this assignment you will explore parallel programming with threads and locks using a hash table. You should do this assignment on a real Linux or MacOS computer (not xv6, not qemu) that has multiple cores. Most recent laptops have multicore processors.</p>
+<p><strong>给哈希表加锁，保证并发安全</strong></p>
+<p>送分题，打开 ph.c 文件</p>
+<pre><code class="language-c">...
+int keys[NKEYS];
+int nthread = 1;
+
+// 为每个 bucket 创建一个锁
+pthread_mutex_t locks[NBUCKET];
+...
+
+static 
+void put(int key, int value)
+{
+  ...
+  if(e){
+    // update the existing key.
+    e-&gt;value = value;
+  } else {
+    // the new is new.
+    pthread_mutex_lock(&amp;locks[i]); // 加锁
+    insert(key, value, &amp;table[i], table[i]);
+    pthread_mutex_unlock(&amp;locks[i]); // 解锁
+  }
+}
+
+int
+main(int argc, char *argv[])
+{
+  ...
+  if (argc &lt; 2) {
+    fprintf(stderr, &quot;Usage: %s nthreads\n&quot;, argv[0]);
+    exit(-1);
+  }
+  // 初始化所有锁
+  for(int i = 0; i &lt; NBUCKET; i++) {
+      pthread_mutex_init(&amp;locks[i], NULL);
+  }
+  nthread = atoi(argv[1]);
+  ...
+}
+</code></pre>
+<p><code>make ph</code> 编译单个 ph 文件，再执行 <code>./ph 4</code> 查看结果</p>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1744288935414.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/91ab33bdcd4379ae1f1931fdc577846aa870cc9a</p>
+<h1 id="barriermoderate">Barrier(moderate)</h1>
+<p>In this assignment you'll implement a barrier: a point in an application at which all participating threads must wait until all other participating threads reach that point too. You'll use pthread condition variables, which are a sequence coordination technique similar to xv6's sleep and wakeup.</p>
+<p><strong>实现一个 “屏障”（<code>barrier</code>）：所有的线程都需要在 barrier 这个同步点等待，直到所有线程都到达这个点之后才可以继续向下执行。</strong></p>
+<p>又是送分题，打开 notxv6/barrier.c 文件</p>
+<pre><code class="language-c">notxv6/barrier.c
+static void 
+barrier()
+{
+  // YOUR CODE HERE
+  //
+  // Block until all threads have called barrier() and
+  // then increment bstate.round.
+  //
+  pthread_mutex_lock(&amp;bstate.barrier_mutex);
+  
+  bstate.nthread++;
+  
+  if (bstate.nthread &gt;= nthread) {
+    bstate.round++;
+    bstate.nthread = 0;
+    // 唤醒所有正在等待的线程
+    pthread_cond_broadcast(&amp;bstate.barrier_cond);
+  } else {
+    // 等待其他线程
+    pthread_cond_wait(&amp;bstate.barrier_cond, &amp;bstate.barrier_mutex);
+  }
+  
+  pthread_mutex_unlock(&amp;bstate.barrier_mutex);
+  
+}
+</code></pre>
+<p><code>make barrier</code> 编译单个文件，再执行 <code>./barrier 4</code> 查看结果</p>
+<figure data-type="image" tabindex="4"><img src="https://yibaoshan.github.io//post-images/1744288946322.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/890a2ee8cba5c98dfbd73df32bd80cd11ed974c4</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Wings：https://blog.wingszeng.top/series/learning-mit-6-s081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab6-copy-on-write/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab6 Copy-on-Write（写时复制）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

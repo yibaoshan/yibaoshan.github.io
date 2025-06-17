@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://yibaoshan.github.io/</id>
+    <title>易保山</title>
+    <updated>2025-06-17T03:22:35.703Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://yibaoshan.github.io/"/>
+    <link rel="self" href="https://yibaoshan.github.io/atom.xml"/>
+    <logo>https://yibaoshan.github.io/images/avatar.png</logo>
+    <icon>https://yibaoshan.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2025, 易保山</rights>
+    <entry>
+        <title type="html"><![CDATA[聊聊 Glide | 不看源码，只聊设计]]></title>
+        <id>https://yibaoshan.github.io/post/opensource-glide/</id>
+        <link href="https://yibaoshan.github.io/post/opensource-glide/">
+        </link>
+        <updated>2025-06-14T16:00:00.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 操作系统实验 - 踩坑总结]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-os-final/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-os-final/">
+        </link>
+        <updated>2025-05-04T16:31:41.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab11 networking（网络栈）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab11-networking/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab11-networking/">
+        </link>
+        <updated>2025-04-29T12:06:05.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab10 mmap（文件&内存映射）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab10-mmap/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab10-mmap/">
+        </link>
+        <updated>2025-04-27T13:16:58.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[ MIT6.S081 - Lab9 File Systems（文件系统）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab9-file-systems/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab9-file-systems/">
+        </link>
+        <updated>2025-04-22T07:37:34.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab8 Locks（锁优化 | 并发安全）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab8-locks/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab8-locks/">
+        </link>
+        <updated>2025-04-15T08:13:21.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab7 Multithreading（进程调度）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab7-multithreading/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab7-multithreading/">
+        </link>
+        <updated>2025-04-10T12:40:25.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab6 Copy-on-Write（写时复制）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab6-copy-on-write/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab6-copy-on-write/">
+        </link>
+        <updated>2025-04-02T09:07:28.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab5 Lazy（延迟分配）]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab5-lazy/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab5-lazy/">
+        </link>
+        <updated>2025-03-31T10:00:25.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MIT6.S081 - Lab4（Trap）实验笔记]]></title>
+        <id>https://yibaoshan.github.io/post/mit6s081-lab4-traps/</id>
+        <link href="https://yibaoshan.github.io/post/mit6s081-lab4-traps/">
+        </link>
+        <updated>2025-03-27T10:56:51.000Z</updated>
+    </entry>
+</feed>

@@ -1,0 +1,715 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab1（Utils）实验笔记 | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab1（Utils）实验笔记
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-02-28 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p><code>MIT6.S081</code> 是麻省理工的操作系统公开课，前身是 <code>MIT6.82</code>8，它包含操作系统的知识和前沿 research 内容，2020 年以后，<code>6.828</code> 被拆分成两个课程，<code>6.828</code> 和 <code>6.S081</code>。</p>
+<p>新的 <code>6.S081</code> 课程去除了原课程中的 research 部分，定位是 <strong>更适合入门的本科课程</strong>，二者的区别之一：</p>
+<ul>
+<li><code>6.828</code> 基于英特尔 <strong><code>IA-32</code></strong> 开发名为 <code>JOS</code> 的操作系统</li>
+<li><code>6.S081</code> 课程则基于 <strong><code>RISC-V</code></strong> 开发名为 <code>xv6</code> 的操作系统</li>
+</ul>
+<p>对操作系统感兴趣的同学可以上手 <code>6.S081</code>，这样可以避开 <code>Intel x86</code> 在发展过程中，为了向下兼容引发的一些历史遗留问题，这部分内容理解起来还是有点头疼的。</p>
+<p><code>MIT6.S081</code> 课程目前有三个版本，<code>2020</code>、<code>2021</code>、<code>2022</code>，课程之间区别不大，建议看 <code>2020</code> 版，网上资料比较多。</p>
+<blockquote>
+<ul>
+<li>课程地址：https://pdos.csail.mit.edu/6.828/2020/schedule.html</li>
+<li>课程录播：https://www.youtube.com/watch?v=L6YqHxYHa7A</li>
+<li>《xv6 os book》：https://pdos.csail.mit.edu/6.S081/2020/xv6/book-riscv-rev1.pdf</li>
+<li>课后 lab：https://pdos.csail.mit.edu/6.S081/2020/labs</li>
+<li>源码仓库：git://g.csail.mit.edu/xv6-labs-2020</li>
+<li>中文翻译版
+<ul>
+<li>视频课程：https://www.bilibili.com/video/BV19k4y1C7kA/</li>
+<li>视频课程 - 文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081</li>
+<li>《xv6 os book》：https://xv6.dgs.zone/</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<p>本篇是 Lab1 的课后实验，实验的目的是让你熟悉 <code>xv6</code> 操作系统和它的一些系统调用。</p>
+<p>在开始实验之前，你需要先看完<a href="https://www.bilibili.com/video/BV19k4y1C7kA">《MIT 6.S081 2020 Lec01》</a>和<a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c1/s0.html">《xv6 第一章 操作系统接口》</a>中的内容，了解 <code>xv6</code> 操作系统的基本接口、操作系统应该怎么设计，并熟悉 <code>进程</code>、<code>内存</code>、<code>I/O</code>、<code>管道</code>等基础概念。</p>
+<blockquote>
+<ul>
+<li>Lab1 地址：https://pdos.csail.mit.edu/6.828/2020/labs/util.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/util</li>
+</ul>
+</blockquote>
+<h1 id="boot-xv6-easy">Boot xv6 (easy)</h1>
+<p>第一步是搭建 <code>xv6</code> 的编译环境，启动系统并运行 <code>ls</code> 指令。</p>
+<p>网上有很多环境搭建的教程，比如<a href="https://zhayujie.com/mit6828-env.html">《MIT6.828 准备 — risc-v 和 xv6 环境搭建》</a>，我这里就不多介绍了，如果不想去折腾的话，也可以使用其他同学制作好的 docker 镜像：https://zhuanlan.zhihu.com/p/449687883。</p>
+<ul>
+<li><code>make qemu</code>，构建并运行 xv6 操作系统。</li>
+<li>xv6 没有 <code>ps</code> 命令，但你可以使用 <code>Ctrl-p</code> 打印每个进程的信息。</li>
+<li>退出 qemu 请输入: <code>Ctrl-a</code> <code>x</code></li>
+<li><code>make grade</code> 启动打分系统，测试程序会自动检查你的作业是否通过。</li>
+</ul>
+<h1 id="sleep-easy">sleep (easy)</h1>
+<blockquote>
+<p>Implement the UNIX program sleep for xv6; your sleep should pause for a user-specified number of ticks. A tick is a notion of time defined by the xv6 kernel, namely the time between two interrupts from the timer chip. Your solution should be in the file user/sleep.c.</p>
+</blockquote>
+<p>为 <code>xv6</code> 系统写一个 <code>sleep</code> 程序，调用系统提供的 <code>sleep()</code> 函数，让程序暂停指定数量的时钟 <code>tick</code>。</p>
+<p>Some hints:</p>
+<ul>
+<li>查看 <code>user</code> 目录下的程序（例如 <code>user/echo.c</code> 、 <code>user/grep.c</code> 和 <code>user/rm.c</code> ），看看他们怎么获取从命令行输入的参数。</li>
+<li>因为命令行参数的类型是字符串，你需要调用 <code>atoi()</code> 将参数转为 <code>int</code> 类型。</li>
+<li>使用系统提供的 <code>sleep()</code> 函数完成暂停功能。</li>
+<li>在程序最后，记得调用 <code>exit()</code> 函数退出进程。</li>
+<li>将 <code>sleep.c</code> 文件添加到 <code>Makefile</code> 的 <code>UPROGS</code> 中，然后使用 <code>make qemu</code> 编译。</li>
+</ul>
+<p>练手题，非常简单，首先在 <code>user</code> 目录下新建 <code>sleep.c</code> 文件</p>
+<pre><code class="language-c">#include &quot;kernel/types.h&quot;
+#include &quot;user/user.h&quot;
+
+int main(int argc, char *argv[]) {
+    // 参数校验，如果输入错误，给用户提示正确用法。
+    if (argc != 2) {
+        printf(&quot;Usage: %s &lt;ticks&gt;\n&quot;, argv[0]);
+        exit(1);
+    }
+    // 获取命令行传进来的参数，假如输入： sleep 3
+    // argv[0] = sleep，第一个参数是程序名称 sleep。
+    // argv[1] = 3，第二个参数是需要暂停多少个 tick
+    char *arg = argv[1];
+    // string 转 int，如果输入值非阿拉伯数字（比如输入字母或中文）则返回默认值 0
+    int ticks = atoi(arg);
+    printf(&quot;Ready to sleep for %d ticks...\n&quot;, ticks);
+    // 调用系统提供的函数进行暂停
+    sleep(ticks);
+    printf(&quot;Sleep finished. Goodbye!\n&quot;);
+    exit(0);
+}
+</code></pre>
+<p>然后打开根目录下的 <code>Makefile</code> 文件，找到 <code>UPROGS</code> 块，在最后一行新增 <code>$U/_sleep\</code></p>
+<pre><code class="language-makefile">UPROGS=\
+$U/_cat\
+$U/_echo\
+...
+$U/_wc\
+$U/_zombie\
+$U/_sleep\ # 新增项
+</code></pre>
+<p>最后运行 <code>./grade-lab-util sleep</code> 命令，来测试代码是否通过。</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1740732897190.png" alt="" loading="lazy"></figure>
+<h1 id="pingpong-easy">pingpong (easy)</h1>
+<blockquote>
+<p>Write a program that uses UNIX system calls to ''ping-pong'' a byte between two processes over a pair of pipes, one for each direction. The parent should send a byte to the child; the child should print &quot;<pid>: received ping&quot;, where <pid> is its process ID, write the byte on the pipe to the parent, and exit; the parent should read the byte from the child, print &quot;<pid>: received pong&quot;, and exit. Your solution should be in the file user/pingpong.c.</p>
+</blockquote>
+<p>利用 <code>fork()</code>、<code>pipe()</code>、<code>read()</code>、<code>write()</code> 等系统函数，写个名为 <code>ping-pong</code> 的程序，完成父子进程通信，子进程收到以后打印 <code>‘&lt;pid&gt;: received ping’</code> 然后将字节发送给父进程后退出，父进程收到回复打印 <code>‘&lt;pid&gt;: received pong’</code>，结束。</p>
+<p>实验考察的是 <code>管道</code> 和 <code>进程</code> 的使用，执行过程如下：</p>
+<ul>
+<li>父进程先说话，子进程收到消息后打印 <code>‘&lt;pid&gt;: received ping’</code> 然后退出自己。</li>
+<li>父进程接收到子进程消息，打印 <code>‘&lt;pid&gt;: received pong’</code> 然后退出进程。</li>
+</ul>
+<p>在 <code>user</code> 目录下，新建 <code>pingpong.c</code> 文件</p>
+<pre><code class="language-c">#include &quot;kernel/types.h&quot;
+#include &quot;user/user.h&quot;
+
+int main(int argc, char *argv[]) {
+
+    // 题目无关，测试 fork 后，父进程修改普通变量子进程是否会同步修改
+    int i = 100;
+
+    // 创建两个管道描述符，前者用于父进程向子进程通信（读和写），后者用于子进程向父进程通信（读和写）
+    // 每个管道描述符长度为 2，其中，0 用于读数据，1 用于写数据。
+    int fd_p2c[2], fd_c2p[2];
+
+    // 调用 pipe() 系统函数，创建两个管道
+    pipe(fd_p2c);
+    pipe(fd_c2p);
+
+    // 调用系统函数 fork() 创建新的进程，父子进程都会接着从本行代码开始向下执行，上面的代码就不用管了。
+    if (fork() == 0) {
+        // 从这里开始，执行的是子进程代码
+        sleep(10);
+        // 打印当前 pid、i 的地址和值，以及两个管道地址，fork 会复制父进程的文件描述符表，所以父子进程打印的地址是相同的
+        printf(&quot;here's child process, pid = %d, i = %d, i addr is %pn, fd_p2c addr is %pn, fd_c2p addr is %pn \n\n&quot;, getpid(), i, &amp;i, &amp;fd_p2c, &amp;fd_c2p);
+
+        int port_read = fd_p2c[0];
+        int port_write = fd_c2p[1];
+
+        char content_receive[1024] = {0};
+        char content_send[1024] = {&quot;daddy!\n&quot;};
+
+        // 读取父进程发送的消息，默认阻塞调用
+        read(port_read, content_receive, sizeof(content_receive));
+        printf(&quot;child received: %s&quot;, content_receive);
+        printf(&quot;%d: received ping\n\n&quot;, getpid());
+
+        // 写入消息至管道，回复父进程
+        write(port_write, content_send, sizeof(content_send));
+
+        sleep(10);
+
+        exit(0);
+    } else {
+        // 不为 0 则表示是父进程的代码
+        i = 101;
+        printf(&quot;here's parent process, pid = %d, i = %d, i addr is %pn, fd_p2c addr is %pn, fd_c2p addr is %pn \n&quot;, getpid(), i, &amp;i, &amp;fd_p2c, &amp;fd_c2p);
+
+        int port_read = fd_c2p[0];
+        int port_write = fd_p2c[1];
+
+        char content_receive[1024] = {0};
+        char content_send[1024] = {&quot;call me daddy please \n&quot;};
+
+        // 题目要求父进程先发送消息
+        write(port_write, content_send, sizeof(content_send));
+
+        // 发完消息等待子进程回复
+        read(port_read, content_receive, sizeof(content_receive));
+        printf(&quot;parent received: %s&quot;, content_receive);
+        printf(&quot;%d: received pong\n\n&quot;, getpid());
+
+        sleep(10);
+
+        exit(0);
+    }
+}
+</code></pre>
+<p>打开根目录下的 <code>Makefile</code> 文件，找到 <code>UPROGS</code> 块，在最后一行新增 <code>$U/_pingpong\</code></p>
+<pre><code class="language-makefile">UPROGS=\
+$U/_cat\
+$U/_echo\
+...
+$U/_wc\
+$U/_zombie\
+$U/_sleep\
+$U/_pingpong\ # 新增项
+</code></pre>
+<p><code>make qemu</code> 编译启动，运行 <code>pingpong</code> 查看结果</p>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1740732927581.png" alt="" loading="lazy"></figure>
+<p>最后运行 <code>./grade-lab-util pingpong</code> 命令，来测试代码是否通过。</p>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1740732945619.png" alt="" loading="lazy"></figure>
+<h1 id="primes-moderatehard">primes (moderate)/(hard)</h1>
+<blockquote>
+<p>Write a concurrent version of prime sieve using pipes. This idea is due to Doug McIlroy, inventor of Unix pipes. The picture halfway down this page and the surrounding text explain how to do it. Your solution should be in the file user/primes.c.</p>
+</blockquote>
+<p>使用 <code>管道</code> 实现一个并发的 <code>素数</code> 筛选版本，这是一道算法题，LeetCode 上有原题：https://leetcode.cn/problems/count-primes/。</p>
+<p>和 LeetCode 不同的是，实验要求使用 <code>管道</code> 通信来实现。我在这个实验上花了大半天时间，因为涉及到进程链的创建和递归处理，而我的 <code>VS Code</code> 还没有配 <code>Debug 环境</code>，全程只能靠打日志来梳理思路。</p>
+<p>为了帮助后面的同学更好理解 <code>素数</code> 筛选过程中的递归逻辑，我用 Java 实现了一个版本，通过递归调用来模拟每个进程的工作方式，或许会对大家有帮助。</p>
+<pre><code class="language-java">    public void sieve(List&lt;Integer&gt; list, int prime) {
+        System.out.println(prime);
+        List&lt;Integer&gt; ret = list.stream()
+                .filter(num -&gt; num % prime != 0) // 收集不能被 prime 整除的数列
+                .collect(Collectors.toList());
+        if (!ret.isEmpty()) {
+            sieve(ret, ret.get(0));             // 这里每一次的递归调用，对应一次 c 语言中的进程创建
+        }
+    }
+</code></pre>
+<p>同时，我还把数据的处理过程打印了出来，<code>白色字体</code> 表示每轮要处理的数据，<code>红色字体</code> 表示的是每一轮中被删除掉的元素。</p>
+<figure data-type="image" tabindex="4"><img src="https://yibaoshan.github.io//post-images/1740732967070.png" alt="" loading="lazy"></figure>
+<p>好，回到正题，首先我们还是在 <code>user</code> 目录下，新建 <code>primes.c</code> 文件</p>
+<pre><code class="language-c">#include &quot;kernel/types.h&quot;
+#include &quot;user/user.h&quot;
+
+void sieve(int input_fd) {
+    int p;
+
+    // 每个进程只负责一个素数，所以读取到的数肯定是质数，参考 Java 版本的第一行打印函数
+    if (read(input_fd, &amp;p, sizeof(int)) &lt;= 0) {
+        exit(0); // 无数据或者写端已关闭，退出
+    }
+
+    printf(&quot;prime %d\n&quot;, p);
+
+    int fd_pipe[2];
+    pipe(fd_pipe); // 创建新管道
+
+    if (fork() == 0) {
+        // 子进程：处理下一层筛法
+        close(fd_pipe[1]); // 关闭写端
+        sieve(fd_pipe[0]); // 递归调用
+        close(fd_pipe[0]);
+        exit(0);
+    } else {
+        // 父进程：过滤当前素数的倍数
+        close(fd_pipe[0]); // 关闭读端
+        int num;
+        while (read(input_fd, &amp;num, sizeof(int)) &gt; 0) {
+            if (num % p != 0) {
+                write(fd_pipe[1], &amp;num, sizeof(int)); // 写入未被过滤的数，等同于 Java 版本的：向 ret 集合中 add 一条数据。
+            }
+        }
+        close(input_fd);    // 关闭输入管道
+        close(fd_pipe[1]);   // 关闭输出管道写端
+        wait(0);            // 等待子进程结束
+        exit(0);
+    }
+}
+
+int main() {
+    int initial_pipe[2];
+    pipe(initial_pipe); // 创建初始管道
+
+    if (fork() == 0) {
+        // 子进程：开始筛法
+        close(initial_pipe[1]); // 关闭写端
+        sieve(initial_pipe[0]);
+        close(initial_pipe[0]);
+        exit(0);
+    } else {
+        // 主进程：生成初始数列
+        close(initial_pipe[0]); // 关闭读端
+        // 第一轮，把 2 ~ 35 通过管道通知给子进程
+        for (int i = 2; i &lt;= 35; i++) {
+            write(initial_pipe[1], &amp;i, sizeof(int));
+        }
+        close(initial_pipe[1]); // 关闭写端，无用端
+        wait(0);               // 等待子进程结束
+        exit(0);
+    }
+}
+</code></pre>
+<p>每个 <code>素数</code> 对应一个 <code>进程</code>，通过 <code>管道</code> 连接。初始进程生成数字，每个后续进程过滤掉当前 <code>素数</code> 的倍数，并将剩余数传递给下一个进程。</p>
+<p>打开根目录下的 <code>Makefile</code> 文件，找到 <code>UPROGS</code> 块，在最后一行新增 <code>$U/_primes\</code></p>
+<pre><code class="language-makefile">UPROGS=\
+$U/_cat\
+$U/_echo\
+...
+$U/_wc\
+$U/_zombie\
+$U/_sleep\
+$U/_pingpong\
+$U/_primes\ # 新增项
+</code></pre>
+<p><code>make qemu</code> 编译启动，运行 <code>primes</code> 查看结果</p>
+<figure data-type="image" tabindex="5"><img src="https://yibaoshan.github.io//post-images/1740732987750.png" alt="" loading="lazy"></figure>
+<p>最后运行 <code>./grade-lab-util primes</code> 命令，来测试代码是否通过。</p>
+<figure data-type="image" tabindex="6"><img src="https://yibaoshan.github.io//post-images/1740733001642.png" alt="" loading="lazy"></figure>
+<h1 id="find-moderate">find (moderate)</h1>
+<blockquote>
+<p>Write a simple version of the UNIX find program: find all the files in a directory tree with a specific name. Your solution should be in the file user/find.c.</p>
+</blockquote>
+<p>编写一个简单 <code>find</code> 程序 ：输入 <code>目录</code> + <code>文件名</code>，查找该目录下所有匹配的文件。</p>
+<p>虽然这道题标的难度是 <code>moderate</code>，但是实现其实并不难，因为 <code>xv6</code> 已经提供了很多功能，所以我们只需要简单地调用系统函数，再注意判定几个边界条件就行了。</p>
+<p>涉及到的知识点：<code>fstat()</code>、<code>stat()</code>、<code>open()</code> 等系统函数调用；<code>dirent</code>、<code>stat</code> 两个结构体包含的信息；<code>strcmp()</code>、<code>strcpy()</code> 操作字符串函数。</p>
+<p>直接上代码</p>
+<pre><code class="language-c">#include &quot;kernel/types.h&quot;
+#include &quot;kernel/stat.h&quot; 
+#include &quot;user/user.h&quot;   
+#include &quot;kernel/fs.h&quot;   
+#include &quot;kernel/fcntl.h&quot;
+
+// 递归查找指定目录下所有匹配目标文件名的文件
+void find(char *path, const char *target_name) {
+
+    char buf[1024];           // 路径缓冲区
+    struct dirent de;        // 目录条目结构体
+    struct stat st;          // 文件状态结构体
+    int fd;                  // 文件描述符
+
+    // 以只读模式打开目录，并返回文件描述符 fd，失败则直接 return
+    if ((fd = open(path, O_RDONLY)) &lt; 0) {
+        fprintf(2, &quot;error: cannot open %s\n&quot;, path);
+        return;
+    }
+
+    // 获取文件的状态，stat 结构体包含：类型、索引号、文件的类型（文件、目录、设备）等信息
+    if (fstat(fd, &amp;st) &lt; 0) {
+        fprintf(2, &quot;error: cannot stat %s\n&quot;, path);
+        close(fd);
+        return;
+    }
+
+    // 检查当前路径是否是目录
+    if (st.type != T_DIR) {
+        fprintf(2, &quot;error: %s is not a directory\n&quot;, path);
+        close(fd);
+        return;
+    }
+
+    // 读取目录中的每一个条目
+    while (read(fd, &amp;de, sizeof(de)) == sizeof(de)) {
+        // 跳过无效条目（inode号为0）
+        if (de.inum == 0)
+            continue;
+
+        // 跳过 &quot;.&quot; 和 &quot;..&quot; 目录（避免无限递归）
+        if (strcmp(de.name, &quot;.&quot;) == 0 || strcmp(de.name, &quot;..&quot;) == 0)
+            continue;
+
+        // 拼接完整路径：当前目录路径 + &quot;/&quot; + 文件名
+        // 例如：path=&quot;a&quot;, de.name=&quot;b&quot; → &quot;a/b&quot;
+        strcpy(buf, path);
+        char *p = buf + strlen(buf);
+        *p++ = '/';
+        strcpy(p, de.name);
+
+        // 获取当前文件的状态
+        if (stat(buf, &amp;st) &lt; 0) {
+            fprintf(2, &quot;find: cannot stat %s\n&quot;, buf);
+            continue;
+        }
+
+        // 如果是目录，递归处理
+        if (st.type == T_DIR) {
+            find(buf, target_name);     // 递归查找子目录
+        } else if (st.type == T_FILE) { // 如果是文件，检查文件名是否匹配
+            if (strcmp(de.name, target_name) == 0) {
+                printf(&quot;%s\n&quot;, buf);    // 打印匹配的完整路径
+            }
+        }
+    }
+
+    close(fd); // 关闭目录文件描述符
+}
+
+int main(int argc, char *argv[]) {
+    // 参数校验
+    if (argc != 3) {
+        fprintf(2, &quot;Usage: find &lt;directory&gt; &lt;filename&gt;\n&quot;);
+        exit(1);
+    }
+
+    find(argv[1], argv[2]);
+    exit(0);
+}
+</code></pre>
+<p>把 <code>$U/_find\</code> 添加到 <code>Makefile</code> 文件中，运行测试 <code>./grade-lab-util find</code></p>
+<figure data-type="image" tabindex="7"><img src="https://yibaoshan.github.io//post-images/1740733015566.png" alt="" loading="lazy"></figure>
+<h1 id="xargs-moderate">xargs (moderate)</h1>
+<blockquote>
+<p>Write a simple version of the UNIX xargs program: read lines from the standard input and run a command for each line, supplying the line as arguments to the command. Your solution should be in the file user/xargs.c.</p>
+</blockquote>
+<p>编写一个简单的 <code>xargs</code> ：从标准输入读取行，对每一行运行一个命令，将行作为命令的参数。</p>
+<p>我之前没用过 <code>Unix</code> 的 <code>xargs</code> 命令，所以刚开始完全不知道这个实验要做什么，后面是专门查资料了解 <code>xargs</code> 是什么以后，才让实验能顺利进行。</p>
+<p>以下关于 <code>xargs</code> 的介绍来自阮一峰老师的博客：https://www.ruanyifeng.com/blog/2019/08/xargs-tutorial.html</p>
+<blockquote>
+<p><code>Unix</code> 命令都带有参数，有些命令可以接受 &quot;<code>标准输入</code>&quot;（<code>stdin</code>）作为参数。</p>
+<pre><code class="language-shell">$ cat /etc/passwd | grep root
+</code></pre>
+<p>上面的代码使用了 <code>管道命令</code>（|）。管道命令的作用，是将左侧命令<code>（cat /etc/passwd）</code>的标准输出转换为标准输入，提供给右侧命令<code>（grep root）</code>作为参数。</p>
+<p>因为 <code>grep</code> 命令可以接受标准输入作为参数，所以上面的代码等同于下面的代码。</p>
+<pre><code class="language-shell">$ grep root /etc/passwd
+</code></pre>
+<p>但是，大多数命令都不接受标准输入作为参数，只能直接在命令行输入参数，这导致无法用管道命令传递参数。举例来说，<code>echo</code> 命令就不接受管道传参。</p>
+<pre><code class="language-shell">$ echo &quot;hello world&quot; | echo
+</code></pre>
+<p>上面的代码不会有输出。因为管道右侧的 <code>echo</code> 不接受管道传来的标准输入作为参数。</p>
+<p><code>xargs</code> 的更多功能请查看：https://www.ruanyifeng.com/blog/2019/08/xargs-tutorial.html</p>
+</blockquote>
+<p>简单来说，<code>xargs</code> 命令是给其他命令传递参数的一个 <code>过滤器</code>，也是 <code>组合多个命令</code> 的一个工具。</p>
+<p><code>xv6</code> 要求实现的是一个简单版本，只保留最核心的 <code>逐行参数追加</code> 功能，所以我们在做实验的时候，只需确保逐行读取输入、能正确分割参数、逐行调用命令即可。</p>
+<pre><code class="language-c">#include &quot;kernel/types.h&quot;
+#include &quot;kernel/stat.h&quot;
+#include &quot;user/user.h&quot;
+#include &quot;kernel/fs.h&quot;
+
+void exec_by_child(char *program, char **args) {
+    // fork 出一个子进程去执行
+    if (fork() == 0) {
+        if (exec(program, args) == -1) {
+            printf(&quot;\nexec faild, not found the %s!\n\n&quot;, program);
+        }
+        exit(0);
+    }
+    return;
+}
+
+int main(int argc, char *argv[]) {
+    char buf[1024];                           // 指令缓冲区
+    char *args_buf[128];                      // 参数缓冲区
+    char *start_ptr = buf, *last_ptr = buf;   // 参数列表的开始、结束指针
+    char **args = args_buf;                   // 当前参数的指针
+
+    if (argc &lt; 2) {
+        fprintf(2, &quot;Usage: &lt;command&gt; &lt;params&gt; | xargs &lt;command&gt;  &lt;params&gt;\n&quot;);
+        exit(1);
+    }
+
+    // 读取所有传入的参数
+    for (int i = 1; i &lt; argc; i++) {
+        *args = argv[i];
+        args++;
+    }
+
+    char **cur_arg = args;
+
+    // 循环读入参数
+    while (read(0, start_ptr, 1) != 0) {
+
+        // 遇到空格或换行符，则将参数结束符置为空，并记录参数的结束位置
+        if (*start_ptr == ' ' || *start_ptr == '\n') {
+            *start_ptr = '\0';          // 将当前字符替换为字符串结束符
+            *(cur_arg++) = last_ptr;    // 将当前参数的起始地址存入参数列表
+            last_ptr = start_ptr + 1;   // 更新last_ptr指向下一个字符
+
+            // 如果读取到换行符 则执行子进程
+            if (*start_ptr == '\n') {
+                *cur_arg = 0;
+                exec_by_child(argv[1], args_buf);
+                cur_arg = args;
+            }
+        }
+        start_ptr++;
+    }
+
+    // 如果还有未处理的参数，同样执行子进程
+    if (cur_arg != args) {
+        *start_ptr = '\0';
+        *(cur_arg++) = last_ptr;
+        *cur_arg = 0;
+        exec_by_child(argv[1], args_buf);
+    }
+
+    while (wait(0) != -1) {
+        // wait for child processes
+    }
+    exit(0);
+}
+</code></pre>
+<p>把 <code>$U/_xargs\</code> 添加到 <code>Makefile</code> 文件中，运行测试 <code>./grade-lab-util xargs</code></p>
+<figure data-type="image" tabindex="8"><img src="https://yibaoshan.github.io//post-images/1740733027968.png" alt="" loading="lazy"></figure>
+<h1 id="结语">结语</h1>
+<p>Lab1 的这几个实验都不是很难，还没深入到内核的实现机制，主要是让我们熟悉 <code>xv6</code> 的环境，常用的 <code>系统调用</code>，理解 <code>进程创建</code> 和 <code>通信</code>，<code>文件系统</code> 操作等。</p>
+<p>接下来的 Lab2 会涉及到 <code>内存管理</code> 和 <code>内核态</code> 的切换，应该会更有意思，那么我们，下次再见。</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>Wings：https://blog.wingszeng.top/series/learning-mit-6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/concurrency-program-order/" class="post-title gt-a-link">
+                    简单聊聊指令重排
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

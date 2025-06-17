@@ -1,0 +1,611 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab4（Trap）实验笔记 | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab4（Trap）实验笔记
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-03-27 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>本篇是 MIT6.S081 操作系统课程 Lab4 的实验笔记，Lab4 的两道题难度并不高，更重要的是 Lec5 和 Lec6 课程中，对 xv6 在 RISC-V 上的 Trap 流程进行学习。</p>
+<blockquote>
+<ul>
+<li>Lab3 地址：https://pdos.csail.mit.edu/6.828/2020/labs/traps.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/traps</li>
+</ul>
+</blockquote>
+<p>在开始实验之前，你需要：</p>
+<ol>
+<li>观看 Lecture 5 课程录播视频：<strong>RISC-V Calling Convention and Stack Frames</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=s-Z5t_yTyTM</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=4</li>
+</ul>
+</li>
+<li>阅读 <a href="https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c3/s0.html">《xv6 book》</a> 第四章：<strong>陷阱指令和系统调用</strong>
+<ul>
+<li>英文原版：https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf</li>
+<li>中译版：https://xv6.dgs.zone/tranlate_books/book-riscv-rev1/c4/s0.html</li>
+</ul>
+</li>
+<li>观看 Lecture 6 课程录播视频：<strong>Isolation &amp; System Call Entry/Exit</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=T26UuauaxWA</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=5</li>
+</ul>
+</li>
+</ol>
+<h1 id="risc-v-assembly-easy">RISC-V assembly (easy)</h1>
+<p>代码切换到 <code>traps</code> 分支，仓库中有个 user/call.c 文件</p>
+<pre><code class="language-c">int g(int x) {
+  return x+3;
+}
+
+int f(int x) {
+  return g(x);
+}
+
+void main(void) {
+  printf(&quot;%d %d\n&quot;, f(8)+1, 13);
+  exit(0);
+}
+</code></pre>
+<p>执行 <code>make fs.img</code> 以后，它会被编译为 call.asm 汇编文件。</p>
+<pre><code class="language-asm">user/_call:     file format elf64-littleriscv
+
+Disassembly of section .text:
+
+0000000000000000 &lt;g&gt;:
+
+int g(int x) {
+   0:	1141                	addi	sp,sp,-16
+   2:	e422                	sd	s0,8(sp)
+   4:	0800                	addi	s0,sp,16
+  return x+3;
+}
+   6:	250d                	addiw	a0,a0,3
+   8:	6422                	ld	s0,8(sp)
+   a:	0141                	addi	sp,sp,16
+   c:	8082                	ret
+
+000000000000000e &lt;f&gt;:
+
+int f(int x) {
+   e:	1141                	addi	sp,sp,-16
+  10:	e422                	sd	s0,8(sp)
+  12:	0800                	addi	s0,sp,16
+  return g(x);
+}
+  14:	250d                	addiw	a0,a0,3
+  16:	6422                	ld	s0,8(sp)
+  18:	0141                	addi	sp,sp,16
+  1a:	8082                	ret
+
+000000000000001c &lt;main&gt;:
+
+void main(void) {
+  1c:	1141                	addi	sp,sp,-16
+  1e:	e406                	sd	ra,8(sp)
+  20:	e022                	sd	s0,0(sp)
+  22:	0800                	addi	s0,sp,16
+  printf(&quot;%d %d\n&quot;, f(8)+1, 13);
+  24:	4635                	li	a2,13
+  26:	45b1                	li	a1,12
+  28:	00000517          	auipc	a0,0x0
+  2c:	7b050513          	addi	a0,a0,1968 # 7d8 &lt;malloc+0xea&gt;
+  30:	00000097          	auipc	ra,0x0
+  34:	600080e7          	jalr	1536(ra) # 630 &lt;printf&gt;
+  exit(0);
+  38:	4501                	li	a0,0
+  3a:	00000097          	auipc	ra,0x0
+  3e:	27e080e7          	jalr	638(ra) # 2b8 &lt;exit&gt;
+</code></pre>
+<p>阅读 call.asm 中的 <code>g()</code> 、<code>f()</code> 和 <code>main()</code> 三个函数代码的，回答以下问题。</p>
+<p><strong>Q：哪些寄存器包含传递给函数的参数？例如，在 <code>main()</code> 调用 <code>printf()</code> 时，哪个寄存器中包含 13？</strong></p>
+<blockquote>
+<p><code>a0</code> ~ <code>a7</code> 共 8 个参数寄存器，13 保存在 <code>a2</code><br>
+RISC-V 函数参数优先使用寄存器传递，返回值可以放在 <code>a0</code> 和 <code>a1</code> 寄存器，如果函数参数超过寄存器梳理，额外的参数会被存放在栈上。</p>
+</blockquote>
+<p><strong>Q：在 <code>main()</code> 函数的汇编代码中， <code>f()</code> 函数的调用在哪里？ <code>g()</code> 函数的调用又在哪里？（提示：编译器可能会内联函数。）</strong></p>
+<blockquote>
+<p>正如提示所言，汇编里面没有对 <code>f()</code> 和 <code>g()</code> 的调用（没有看到 <code>call</code> 或 <code>jalr</code> 指令跳转到这些函数）<br>
+由于 <code>f()</code> 和 <code>g()</code> 函数都很简单（ <code>f()</code> 调用 <code>g()</code> ， <code>g()</code> 只是返回参数 +3），编译器进行了函数内联优化，直接把计算结果 <code>f(8)+1</code> 优化成了常量 12。</p>
+</blockquote>
+<p><strong>Q：函数 <code>printf()</code> 位于什么地址？</strong></p>
+<blockquote>
+<p><code>printf()</code> 函数位于地址 0x630</p>
+<ol>
+<li><code>auipc</code> ra,0x0 - 将当前 PC（程序计数器）的值加上立即数（这里是0）存入 <code>ra</code> 寄存器</li>
+<li><code>jalr</code> 1536(ra) - 跳转到 <code>ra</code> + 1536 的地址，并将返回地址保存在 <code>ra</code> 中</li>
+</ol>
+</blockquote>
+<p><strong>Q：在 <code>jalr</code> 到 <code>printf()</code> 在 <code>main()</code> 之后，寄存器 <code>ra</code> 中的值是什么？</strong></p>
+<blockquote>
+<p><code>ra</code> 寄存器中保存的值是 0x38 ，也就是 <code>jalr</code> 指令后面那条指令的地址（ exit(0) 的第一条指令的地址）</p>
+</blockquote>
+<p><strong>Q：运行以下代码，输出是什么？如果 RISC-V 是大端序，你需要将 <code>i</code> 设置为什么值才能得到相同的输出？ 57616 的值是否需要改变？</strong></p>
+<pre><code class="language-c">   unsigned int i = 0x00646c72;
+   printf(&quot;H%x Wo%s&quot;, 57616, &amp;i);
+
+   unsigned int i = 0x00646c72;
+   printf(&quot;H%x Wo%s&quot;, 57616, &amp;i);
+</code></pre>
+<blockquote>
+<p>输出是： <strong>HE110 World</strong>。在大端序下， <code>i</code> 应该设置为 0x726c6400，57616 的值不需要改变，因为：</p>
+<ol>
+<li>这个数字是直接用于十六进制打印（ %x ）</li>
+<li>数字的表示方式不受字节序的影响，输出仍然是 E110</li>
+</ol>
+</blockquote>
+<p><strong>Q：在下面的代码中，在 'y=' 之后将打印什么？（注意：答案不是一个具体的值。）为什么会这样？</strong></p>
+<pre><code class="language-c">   	printf(&quot;x=%d y=%d&quot;, 3);
+</code></pre>
+<blockquote>
+<ul>
+<li>x= 后会打印 3，y= 后会打印一个随机值，具体是什么值取决于上一次 <code>a2</code> 寄存器保存的是什么</li>
+</ul>
+</blockquote>
+<h1 id="backtrace-moderate">Backtrace (moderate)</h1>
+<p>Implement a backtrace() function in kernel/printf.c. Insert a call to this function in sys_sleep, and then run bttest, which calls sys_sleep. Your output should be as follows:</p>
+<p>实现一个 <code>backtrace()</code> 函数并在 kernel/printf.c 中插入对该函数的调用，然后运行 <code>sys_sleep</code> ， <code>sys_sleep</code> 会调用 bttest 。你的输出应如下所示：</p>
+<pre><code>backtrace:
+0x0000000080002cda
+0x0000000080002bb6
+0x0000000080002898
+</code></pre>
+<p>标的中等难度，实际做起来挺简单的，思路：</p>
+<ul>
+<li>每个函数调用都会在栈上创建一个栈帧（stack frame）</li>
+<li>栈帧中包含：
+<ul>
+<li>返回地址（return address）：在帧指针-8的位置</li>
+<li>上一个栈帧的帧指针（frame pointer）：在帧指针-16的位置</li>
+</ul>
+</li>
+</ul>
+<p>首先打开 kernel/riscv.h 文件，在底部追加获取帧指针的函数</p>
+<pre><code class="language-c">static inline uint64
+r_fp()
+{
+  uint64 x;
+  asm volatile(&quot;mv %0, s0&quot; : &quot;=r&quot; (x) );
+  return x;
+}
+</code></pre>
+<p>在 kernel/defs.h 中添加函数声明</p>
+<pre><code class="language-c">// printf.c
+...
+void            printfinit(void);
+void            backtrace(void);  // 新增
+</code></pre>
+<p>接着，kernel/printf.c 实现 <code>backtrace()</code> 函数</p>
+<pre><code class="language-c">void
+backtrace(void)
+{
+  printf(&quot;backtrace:\n&quot;);
+  
+  uint64 fp = r_fp();
+  uint64 top = PGROUNDUP(fp);
+  uint64 bottom = PGROUNDDOWN(fp);
+  
+  // 遍历栈帧
+  while(fp &gt;= bottom &amp;&amp; fp &lt; top) {
+    uint64 ra = *(uint64*)(fp - 8);  // 返回地址在 fp-8
+    printf(&quot;%p\n&quot;, ra);
+    fp = *(uint64*)(fp - 16);  // 上一个帧指针在 fp-16
+  }
+}
+</code></pre>
+<p>最后一步， kernel/sysproc.c 的 <code>sys_sleep</code> 中增加调用</p>
+<pre><code>uint64
+sys_sleep(void)
+{
+  int n;
+  uint ticks0;
+  
+  backtrace();  // 添加调用
+  
+  ...
+}
+</code></pre>
+<p>搞定，主要工作在 <code>backtrace()</code> 函数中，挺简单的，运行 bttest 查看结果</p>
+<pre><code>$ bttest
+backtrace:
+0x0000000080002ce4
+0x0000000080002bbe
+0x00000000800028a8
+</code></pre>
+<p>测试通过，完整的代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/78fd795840d77baf3a0f3e61d9b5d85c55085e2f</p>
+<h1 id="alarm-hard">Alarm (hard)</h1>
+<p>In this exercise you'll add a feature to xv6 that periodically alerts a process as it uses CPU time. This might be useful for compute-bound processes that want to limit how much CPU time they chew up, or for processes that want to compute but also want to take some periodic action. More generally, you'll be implementing a primitive form of user-level interrupt/fault handlers; you could use something similar to handle page faults in the application, for example. Your solution is correct if it passes alarmtest and usertests.</p>
+<p>写个定时器程序，实现两个系统调用:</p>
+<ol>
+<li><code>sigalarm(interval, handler)</code> - 设置定时器,每经过 interval 个时钟周期就调用一次 <code>handler()</code> 函数</li>
+<li><code>sigreturn()</code> - <code>handler()</code> 函数执行完后返回原来的执行位置</li>
+</ol>
+<p>这道题也不是很难，代码量比上一题多一点，主要考察<strong>系统调用的实现</strong>（Lab2已经做过了）、<strong>用户态和内核态的切换</strong>、<strong>如何保存和回复进程的上下文</strong>、以及 <strong>处理时钟中断</strong> 这几点。</p>
+<p>首先，按照实验要求，在 user/user.h 中添加两个系统调用</p>
+<pre><code class="language-c">// system calls
+int fork(void);
+...
+int uptime(void);
+int sigalarm(int ticks, void (*handler)());
+int sigreturn(void);                       
+</code></pre>
+<p>在 kernel/sysproc.c 底部实现系统调用</p>
+<pre><code class="language-c">uint64
+sys_sigalarm(void)
+{
+  int interval; // 定时器的间隔
+  uint64 handler; // 处理函数的地址
+
+  if(argint(0, &amp;interval) &lt; 0)
+    return -1;
+  if(argaddr(1, &amp;handler) &lt; 0)
+    return -1;
+    
+  struct proc *p = myproc();
+
+  // 初始化定时器
+  p-&gt;alarm_interval = interval;
+  p-&gt;alarm_handler = (void(*)())handler;
+  p-&gt;ticks_count = 0;
+  p-&gt;alarm_on = 0;
+  
+  return 0;
+}
+
+uint64
+sys_sigreturn(void)
+{
+  struct proc *p = myproc();
+  *p-&gt;trapframe = *p-&gt;alarm_trapframe; // 恢复保存的上下文!!!
+  p-&gt;alarm_on = 0; // 清除执行标志，允许下一次定时器触发
+  return 0;
+}
+</code></pre>
+<p>接着需要为 xv6 增加两个系统调用，参考 lab2 的过程，我这里写到一起了</p>
+<pre><code class="language-c">user/usys.pl 添加系统调用入口
+entry(&quot;fork&quot;);
+...
+entry(&quot;sigalarm&quot;); 
+entry(&quot;sigreturn&quot;);
+
+kernel/syscall.h 中添加系统调用号
+#define SYS_sigalarm  22 
+#define SYS_sigreturn  23
+
+kernel/syscall.c
+...
+extern uint64 sys_uptime(void);
+extern uint64 sys_sigalarm(void); 
+extern uint64 sys_sigreturn(void);
+
+static uint64 (*syscalls[])(void) = {
+[SYS_fork]    sys_fork,
+...
+[SYS_close]   sys_close,
+[SYS_sigalarm]  sys_sigalarm, 
+[SYS_sigreturn] sys_sigreturn,
+};
+</code></pre>
+<p>然后我们来修改调用过程，先为进程增加定时器相关字段， kernel/proc.h</p>
+<pre><code class="language-c">struct proc {
+  struct spinlock lock;
+  ...
+  char name[16];               // Process name (debugging)
+
+  int alarm_interval;         // 记录定时器触发间隔（以时钟周期为单位）
+  void (*alarm_handler)();    // 定时器处理函数的函数指针
+  int ticks_count;           // 当前已经过的时钟周期计数器
+  struct trapframe *alarm_trapframe; // 用于保存中断前进程的上下文信息
+  int alarm_on;              // 定时器是否已经在运行了
+};
+</code></pre>
+<p>字段的含义看注释</p>
+<p>接着来处理时钟中断逻辑 kernel/trap.c</p>
+<pre><code>void
+usertrap(void)
+{
+   ...
+  // give up the CPU if this is a timer interrupt.
+  if(which_dev == 2) {
+    struct proc *p = myproc();
+
+    // 如果设置了定时器
+    if(p-&gt;alarm_interval &gt; 0) {
+      p-&gt;ticks_count++;
+
+      // 是否达到触发条件：计数达到了设定的间隔 + 处理函数当前未在执行
+      if(p-&gt;ticks_count &gt;= p-&gt;alarm_interval &amp;&amp; !p-&gt;alarm_on) {
+        p-&gt;ticks_count = 0;
+        p-&gt;alarm_on = 1;
+        
+        // 首次调用时分配保存上下文的空间
+        if(p-&gt;alarm_trapframe == 0)
+          p-&gt;alarm_trapframe = kalloc();
+        // 保存当前进程的完整上下文
+        *p-&gt;alarm_trapframe = *p-&gt;trapframe;
+        
+        // 修改程序计数器指向处理函数
+        // 当中断返回时会跳转到 handler 函数执行
+        p-&gt;trapframe-&gt;epc = (uint64)p-&gt;alarm_handler;
+      }
+    }
+    yield();
+  }
+
+  usertrapret();
+}
+</code></pre>
+<p>最后，修改 Makefile，添加 <code>alarmtest</code> 测试程序</p>
+<pre><code class="language-makefile">UPROGS=\
+	...
+	$U/_zombie\
+	$U/_alarmtest\    # 新增
+</code></pre>
+<p>执行 <code>alarmtest</code> 运行测试程序</p>
+<pre><code>$ alarmtest
+test0 start
+.....alarm!
+test0 passed
+test1 start
+.alarm!
+alarm!
+alarm!
+.alarm!
+alarm!
+alarm!
+.alarm!
+.alarm!
+alarm!
+alarm!
+test1 passed
+test2 start
+..alarm!
+test2 passed
+</code></pre>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/50da5c39ceee8ec76a6b038e1f4ca3e2fed018a9</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>Miigon：https://blog.miigon.net/categories/mit6-s081/</li>
+<li>知乎专栏《28天速通MIT 6.S081操作系统》：https://zhuanlan.zhihu.com/p/632281381</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab3-page-table/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab3（Page Table页表）实验笔记
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

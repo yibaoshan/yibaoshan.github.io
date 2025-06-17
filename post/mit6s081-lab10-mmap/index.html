@@ -1,0 +1,758 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab10 mmap（文件&amp;内存映射） | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab10 mmap（文件&amp;内存映射）
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-04-27 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h1 id="mit6s081-lab10-mmap文件内存映射">MIT6.S081 - Lab10 mmap（文件&amp;内存映射）</h1>
+<p>本篇是 MIT6.S081 2020 操作系统课程 Lab10 的实验笔记，目标只有一个：<strong>实现文件映射到内存的功能，也就是 <code>mmap</code></strong>。</p>
+<p>作为一名 Android 开发者，我可太熟悉 <strong>mmap</strong> 这个词儿了。Android 的 <strong>跨进程通信 Binder 驱动</strong>、<strong>图形内存分配和管理</strong>、<strong>腾讯 MMKV 键值对库</strong> 都离不开 mmap 技术的支持，所以，我对 什么是 mmap、它的使用场景和使用方式 以及 大概的实现原理 多多少少都了解一些。</p>
+<blockquote>
+<ul>
+<li>Lab10 地址：https://pdos.csail.mit.edu/6.828/2020/labs/mmap.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/mmap</li>
+</ul>
+</blockquote>
+<p>今天的实验要我们自己来实现 <strong>简化版的 mmap</strong> ，虽然只有 Linux mmap 的部分功能（<em>仅支持把文件映射到内存</em>），但足够让我们理解 mmap 的核心原理了。（<em>能借着学习 xv6 的机会一窥 mmap 全貌，说实话我还是挺开心的</em>）</p>
+<p>在开始实验之前，你需要：</p>
+<ol>
+<li>观看 Lecture 17 课程录播视频：<strong>Virtual memory for applications（虚拟内存）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=YNQghIvk0jc</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=16</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec17-virtual-memory-for-applications-frans</li>
+</ul>
+</li>
+<li>阅读论文：<strong>Virtual memory Primitives for User Programs</strong>
+<ul>
+<li>mit 存档：https://pdos.csail.mit.edu/6.828/2020/readings/appel-li.pdf</li>
+</ul>
+</li>
+</ol>
+<h1 id="聊聊-mmap">聊聊 mmap</h1>
+<p>实验开始前，我们先来聊聊 什么是 mmap？ 它的出现是为了解决什么问题？我们为什么需要它？</p>
+<p>根据维基资料：https://en.wikipedia.org/wiki/Mmap，mmap 的原始设计来自 <code>TOPS-20</code> 操作系统，最早是为了解决 <strong>虚拟内存管理效率问题</strong></p>
+<ul>
+<li><strong>传统的文件 I/O 需要在 用户空间 和 内核空间 之间多次拷贝数据。</strong></li>
+<li><strong>大文件处理时，内存的开销比较大。</strong></li>
+</ul>
+<p>举个例子🌰</p>
+<pre><code class="language-c">void file_io(const char* filename) {
+    // 获取文件 fd
+    int fd = open(filename, O_RDWR);
+    if (fd &lt; 0) return;
+
+    // 分配位于用户空间的 buffer 缓冲区
+    // ps：如果是大文件，为了提高效率，这里就需要申请比较大的缓冲区
+    char* buffer = (char*)malloc(BUFFER_SIZE);
+    
+    // 从文件读数据到 buffer 缓冲区
+    // 1. 内核先将数据从磁盘读入内核缓冲区
+    // 2. 然后再将数据从内核缓冲区拷贝到用户空间缓冲区
+    read(fd, buffer, BUFFER_SIZE);
+    
+    // 修改数据
+    buffer[100] = 'A';
+    
+    // 把修改的内容写回文件
+    // 1. 数据从用户空间缓冲区拷贝到内核缓冲区
+    // 2. 然后再从内核缓冲区写入磁盘
+    write(fd, buffer, BUFFER_SIZE);
+    
+    free(buffer);
+    close(fd);
+}
+</code></pre>
+<p>楼上是用 传统的文件 I/O 方式 读写文件代码：</p>
+<ul>
+<li><strong>读取时，数据会先从 <code>磁盘</code>-&gt;<code>内核缓冲区</code>-&gt;<code>用户缓冲区</code></strong></li>
+<li><strong>写回时，数据从 <code>用户缓冲区</code>-&gt;<code>内核缓冲区</code>-&gt;<code>磁盘</code></strong></li>
+</ul>
+<p>如果遇到频繁读写的场景，每次读写都要在 内核空间 和 用户空间 之间拷贝数据，浪费 CPU 资源。</p>
+<p>如果改为 mmap 实现：</p>
+<pre><code class="language-c">void mmap_file_io(const char* filename) {
+    int fd = open(filename, O_RDWR);
+    if (fd &lt; 0) return;
+    
+    // 将文件映射到进程的地址空间
+    char* addr = mmap(NULL, BUFFER_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    
+    // 直接修改内存，不需要额外的拷贝
+    addr[100] = 'A';
+    
+    // 系统会自动将修改同步到文件
+    munmap(addr, BUFFER_SIZE);
+    close(fd);
+}
+</code></pre>
+<p><strong>我们只需要将 文件 映射到进程的 地址空间，读写内存 就可以 直接修改文件内容，不需要再进行 额外的 拷贝操作了，这将会大大减少 内存拷贝 的次数，提高系统的整体效率。</strong></p>
+<h1 id="mmap-hard">mmap (hard)</h1>
+<p>The mmap and munmap system calls allow UNIX programs to exert detailed control over their address spaces. They can be used to share memory among processes, to map files into process address spaces, and as part of user-level page fault schemes such as the garbage-collection algorithms discussed in lecture. In this lab you'll add mmap and munmap to xv6, focusing on memory-mapped files.</p>
+<p>前一小节通过小 demo 简单介绍 mmap 的使用，本章节我们将根据实验要求，实现 xv6 中的 mmap 功能。</p>
+<h3 id="增加系统调用">增加系统调用</h3>
+<p>Start by adding _mmaptest to UPROGS, and mmap and munmap system calls, in order to get user/mmaptest.c to compile. For now, just return errors from mmap and munmap. We defined PROT_READ etc for you in kernel/fcntl.h. Run mmaptest, which will fail at the first mmap call.</p>
+<p><strong>为 xv6 实现 mmap 功能，实现思路参考（<em>提示部分</em>）：https://pdos.csail.mit.edu/6.828/2020/labs/mmap.html</strong></p>
+<p>首先，我们按照实验提示，先为 xv6 工程添加 <code>mmap()</code> 和 <code>munmap()</code> 两个系统调用</p>
+<pre><code class="language-c">kernel/syscall.h
+...
+#define SYS_close  21
+#define SYS_mmap   22
+#define SYS_munmap 23
+
+kernel/syscall.c
+...
+extern uint64 sys_uptime(void);
+extern uint64 sys_mmap(void);
+extern uint64 sys_munmap(void);
+
+kernel/sysfile.c
+...
+uint64
+sys_mmap(void) // 新增两个系统调用空函数，暂时不用实现
+{
+    return 0;
+}
+
+uint64
+sys_munmap(void)
+{
+    return 0;
+}
+
+user/user.h
+...
+void *memcpy(void *, const void *, uint);
+void *mmap(void *addr, int length, int prot, int flags, int fd, int offset);
+int munmap(void *addr, int length);
+
+user/user.pl
+...
+entry(&quot;uptime&quot;);
+entry(&quot;mmap&quot;);
+entry(&quot;munmap&quot;);
+</code></pre>
+<p><code>mmap()</code> 和 <code>munmap()</code> 新增完成以后，运行 <code>make qemu</code> 可以正常编译，但是运行 <code>mmaptest</code> 测试程序会报错：</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1745759880598.png" alt="" loading="lazy"></figure>
+<h3 id="创建-vma">创建 VMA</h3>
+<p>Keep track of what mmap has mapped for each process. Define a structure corresponding to the VMA (virtual memory area) described in Lecture 15, recording the address, length, permissions, file, etc. for a virtual memory range created by mmap. Since the xv6 kernel doesn't have a memory allocator in the kernel, it's OK to declare a fixed-size array of VMAs and allocate from that array as needed. A size of 16 should be sufficient.</p>
+<p><strong>定义 <a href="https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=15">Lec 16</a> 提到的 <code>VMA</code> 结构体，用来记录 mmap 创建的虚拟内存区域，包括 地址、长度、权限、文件等，然后为进程创建长度 16 的 <code>vma</code> 数组</strong></p>
+<pre><code class="language-c">kernel/proc.h
+...
+enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+#define NVMA 16  // 每个进程的最大 VMA 数量
+
+struct vma {
+  uint64 addr;       // 开始映射的地址（va）
+  uint64 length;     // 映射的长度
+  int prot;          // 保护标志 (PROT_READ, PROT_WRITE)
+  int flags;         // MAP_SHARED 或 MAP_PRIVATE
+  struct file *file; // 映射的文件
+  uint64 offset;     // 文件偏移量
+};
+
+// Per-process state
+struct proc {
+  ...
+  struct vma vmas[NVMA];       // 进程的内存映射区域
+};
+</code></pre>
+<h3 id="实现-mmap">实现 mmap</h3>
+<p>Implement mmap: find an unused region in the process's address space in which to map the file, and add a VMA to the process's table of mapped regions. The VMA should contain a pointer to a struct file for the file being mapped; mmap should increase the file's reference count so that the structure doesn't disappear when the file is closed (hint: see filedup). Run mmaptest: the first mmap should succeed, but the first access to the mmap-ed memory will cause a page fault and kill mmaptest.</p>
+<p>按以下步骤实现 <code>mmap()</code> 函数：</p>
+<ol>
+<li><strong>在当前进程的 <code>vmas</code> 数组中，查找一个空闲未使用的 <code>vma</code> 对象。</strong></li>
+<li><strong>把本次 <code>mmap()</code> 调用的参数，记录到刚刚申请的 <code>vma</code> 对象中。</strong></li>
+<li><strong>调用 <code>filedup()</code> 为入参的 <code>file</code> 增加一次引用次数，防止其他地方调用 <code>fileclose()</code> 函数时，因为没人引用文件，导致该文件被关闭了。</strong></li>
+</ol>
+<blockquote>
+<p><em>注意，这一步不需要真的申请内存，和 懒加载 实验一样，申请内存延迟到在 缺页异常 里面处理</em></p>
+</blockquote>
+<p><code>sys_mmap()</code> 函数实现如下：</p>
+<pre><code class="language-c">kernel/sysfile.c
+
+uint64
+sys_mmap(void)
+{
+    // 调用 mmap 函数传进来的参数
+    uint64 addr;
+    int len, prot, flags, fd, offset;
+    struct file* file;
+    
+    // 创建一个空的 vma
+    struct vma* vma = 0;
+
+    // 获取 mmap 系统调用的入参，并检查是否合法
+    if(argaddr(0, &amp;addr)&lt;0 || argint(1, &amp;len)&lt;0
+       || argint(2, &amp;prot)&lt;0 || argint(3, &amp;flags)&lt;0
+       || argfd(4, &amp;fd, &amp;file)&lt;0 || argint(5, &amp;offset)&lt;0)
+        return -1;
+
+    // 一些参数合法性校验
+    if(len &lt;= 0)
+      return -1;        
+    if((prot &amp; (PROT_READ|PROT_WRITE|PROT_EXEC)) == 0) // only PROT_READ, PROT_WRITE, PROT_EXEC
+        return -1;
+    if((prot &amp; PROT_WRITE) &amp;&amp; !file-&gt;writable &amp;&amp; flags==MAP_SHARED) // MAP_SHARED 时，文件必须可写
+        return -1;
+    if((prot &amp; PROT_READ) &amp;&amp; !file-&gt;readable) // 同理，MAP_PRIVATE 时，文件必须可读，否则返回错误
+        return -1;
+
+    struct proc* p = myproc();
+    len = PGROUNDUP(len);
+
+    // 如果进程的虚拟内存空间已经超出了最大值，返回错误
+    if(p-&gt;sz+len &gt; MAXVA)
+        return -1;
+
+    if(offset&lt;0 || offset%PGSIZE)
+        return -1;
+
+    // 在当前进程 vma 数组里面，查找一个空闲的 vma 区域    
+    for(int i=0; i&lt;NVMA; i++) {
+        if(p-&gt;vmas[i].addr)
+            continue;
+        vma = &amp;p-&gt;vmas[i];
+        break;
+    }
+
+    // vma 全部被占用，没有空闲，返回🔙
+    if(!vma)
+        return -1;
+
+    if(addr == 0)
+        vma-&gt;addr = p-&gt;sz; // 用户未指定地址，则使用进程当前大小作为起始地址
+    else
+        vma-&gt;addr = addr; // 用户指定了地址
+
+    // 一些赋值操作
+    vma-&gt;length = len;
+    vma-&gt;prot = prot;
+    vma-&gt;flags = flags;
+    vma-&gt;offset = offset;
+    vma-&gt;file = file;
+    p-&gt;sz += len;
+    
+    // 文件引用 +1
+    filedup(file);
+
+    return vma-&gt;addr;
+}
+</code></pre>
+<h3 id="实现-munmap">实现 munmap</h3>
+<p>Implement munmap: find the VMA for the address range and unmap the specified pages (hint: use uvmunmap). If munmap removes all pages of a previous mmap, it should decrement the reference count of the corresponding struct file. If an unmapped page has been modified and the file is mapped MAP_SHARED, write the page back to the file. Look at filewrite for inspiration.</p>
+<p>按下面的步骤实现 <code>munmap()</code> 函数：</p>
+<ol>
+<li><strong>在当前进程中，查找要解除映射的 <code>vma</code> 对象。</strong></li>
+<li><strong>如果找到了，调用 <code>uvmunmap()</code> 函数，解除映射。</strong></li>
+<li><strong>调用 <code>fileclose()</code> 函数，释放文件对象。</strong></li>
+<li><strong>如果是 共享映射（<code>MAP_SHARED</code>）且 页面被修改过，要把内容写回文件（参考 <code>filewrite()</code> 的实现）。</strong></li>
+</ol>
+<pre><code class="language-c">uint64
+sys_munmap(void)
+{
+    uint64 addr;
+    int len;
+    struct vma* vma = 0;
+    struct proc* p = myproc();
+
+    if(argaddr(0, &amp;addr)&lt;0 || argint(1, &amp;len)&lt;0)
+        return -1;
+
+    // 参数检查
+    if(len &lt;= 0 || addr + len &gt; p-&gt;sz)
+        return -1;
+
+    addr = PGROUNDDOWN(addr);
+    len = PGROUNDUP(len);
+
+    // 查找 addr 对应的 VMA
+    for(int i=0; i&lt;NVMA; i++) {
+        if(p-&gt;vmas[i].addr &amp;&amp; addr&gt;=p-&gt;vmas[i].addr
+           &amp;&amp; addr+len&lt;=p-&gt;vmas[i].addr+p-&gt;vmas[i].length) {
+            vma = &amp;p-&gt;vmas[i];
+            break;
+        }
+    }
+
+    // addr 不合法，返回
+    if(!vma || addr != vma-&gt;addr)
+        return -1;
+
+    // 如果是共享映射，需要在接触映射的时候写回文件！
+    if(vma-&gt;flags &amp; MAP_SHARED)
+        filewrite(vma-&gt;file, addr, len);
+
+    // 解除页表映射
+    uvmunmap(p-&gt;pagetable, addr, len/PGSIZE, 1);
+
+    // 更新 VMA 信息
+    if(len == vma-&gt;length) {
+        // 完全解除映射，则释放 VMA
+        fileclose(vma-&gt;file);
+        memset(vma, 0, sizeof(*vma));
+    } else {
+        // 部分解除映射，更新地址和长度
+        vma-&gt;addr += len;
+        vma-&gt;length -= len;
+    }
+
+    // 解除映射的是进程地址空间的末尾，调整当前进程大小
+    if(addr + len == p-&gt;sz)
+        p-&gt;sz -= len;
+
+    return 0;
+}
+</code></pre>
+<h3 id="trap-handler-懒分配">trap handler 懒分配</h3>
+<p>Add code to cause a page-fault in a mmap-ed region to allocate a page of physical memory, read 4096 bytes of the relevant file into that page, and map it into the user address space. Read the file with readi, which takes an offset argument at which to read in the file (but you will have to lock/unlock the inode passed to readi). Don't forget to set the permissions correctly on the page. Run mmaptest; it should get to the first munmap.</p>
+<p>处理 缺页异常，当程序首次访问 映射的区域 时，会触发 缺页异常：</p>
+<ol>
+<li><strong>这时候才会真正的为 <code>va</code> 分配内存 <code>mem</code>。</strong></li>
+<li><strong>把要映射的文件内容按 offset 读出一页，写到刚申请的内存中。</strong></li>
+<li><strong>为 <code>mem</code> 和 <code>va</code> 创建映射关系。</strong></li>
+</ol>
+<pre><code class="language-c">kernel/trap.c
+...
+#include &quot;spinlock.h&quot;
+#include &quot;sleeplock.h&quot;
+#include &quot;fs.h&quot;
+#include &quot;file.h&quot;
+#include &quot;proc.h&quot;
+#include &quot;fcntl.h&quot;
+#include &quot;defs.h&quot;
+
+void
+usertrap(void)
+{
+  ...
+  if(r_scause() == 8){
+    ...
+  } else if((which_dev = devintr()) != 0){
+    // ok
+  } else if(r_scause()==13 || r_scause()==15) { // 处理缺页异常，这里是程序首次访问映射的区域出错了，需要为该 va 分配物理内存
+    // 读取需要处理错误的 va，参考页表实验
+    uint64 va = r_stval();                    
+    struct vma* vma = 0;                      
+    char* mem = 0;                           
+    int success = 0;                       
+    
+    // 对齐 va
+    va = PGROUNDDOWN(va);
+    
+    // 验证地址合法性（必须在用户栈顶和进程大小之间）
+    if(va &lt; p-&gt;sz &amp;&amp; va &gt; p-&gt;trapframe-&gt;sp) {
+        // 尝试查找当前 va 在是哪个 vma 中
+        for(int i=0; i&lt;NVMA; i++) {
+            if(va&gt;=p-&gt;vmas[i].addr &amp;&amp; va&lt;p-&gt;vmas[i].addr+p-&gt;vmas[i].length) {
+                vma = &amp;p-&gt;vmas[i];
+                break;
+            }
+        }
+        
+        // 找到 va 对应的 vma
+        if(vma) {
+            // 尝试为 va 分配物理内存
+            mem = kalloc();
+            if(mem) { // 分配成功
+                memset(mem, 0, PGSIZE);  // 清零新分配的内存
+                
+                // 把要映射的文件的数据读出来，然后写入刚申请的内存中 mem
+                uint offset = va - vma-&gt;addr + vma-&gt;offset;  // 计算文件偏移量，确定要读取的位置
+                ilock(vma-&gt;file-&gt;ip);
+                int bytes_read = readi(vma-&gt;file-&gt;ip, 0, (uint64)mem, offset, PGSIZE);
+                iunlock(vma-&gt;file-&gt;ip);
+                
+                if(bytes_read &gt;= 0) {
+                    // 更新页表项 pte 的权限
+                    int flags = PTE_U;  // 基本权限，用户可访问
+                    // 根据 prot 字段设置 pte 的权限
+                    if(vma-&gt;prot &amp; PROT_READ)
+                        flags |= PTE_R;  // 可读
+                    if(vma-&gt;prot &amp; PROT_WRITE)
+                        flags |= PTE_W;  // 可写
+                    if(vma-&gt;prot &amp; PROT_EXEC)
+                        flags |= PTE_X;  // 可执行
+                    
+                    // 如果是共享映射，确保内存的修改可以被写回到文件中
+                    if(vma-&gt;flags &amp; MAP_SHARED)
+                        flags |= PTE_R;
+                    
+                    // 为 va 建立页表映射
+                    if(mappages(p-&gt;pagetable, va, PGSIZE, (uint64)mem, flags) == 0) {
+                        success = 1;  // 查找 vma、分配内存、建立页表映射这几步全部都成功了
+                    }
+                }
+            }
+        }
+    }
+    
+    // 没成功的话，如果已经分配过内存，释放掉
+    if(!success) {
+        if(mem)
+            kfree(mem);  // 释放已分配的内存
+        p-&gt;killed = 1;   // 终止进程
+    }
+  } else {
+    ...
+  }
+...
+}
+</code></pre>
+<h3 id="修改-exit">修改 exit</h3>
+<p>Modify exit to unmap the process's mapped regions as if munmap had been called. Run mmaptest; mmap_test should pass, but probably not fork_test.</p>
+<p><strong>修改 <code>exit()</code> 函数，在进程退出时，要像调用 <code>munmap()</code> 一样清理掉进程的所有映射区域</strong></p>
+<pre><code class="language-c">kernel/proc.c
+void
+exit(int status)
+{
+  ...
+  // Close all open files.
+  for(int fd = 0; fd &lt; NOFILE; fd++){
+    if(p-&gt;ofile[fd])
+    ...
+  }
+
+  // 清理所有的 VMA
+  for(int i = 0; i &lt; 16; i++) {
+    if(p-&gt;vmas[i].length &gt; 0) { // 同样只处理被使用的 vma
+      // 解除映射
+      uvmunmap(p-&gt;pagetable, p-&gt;vmas[i].addr, p-&gt;vmas[i].length/PGSIZE, 1);
+      if(p-&gt;vmas[i].file) // 如果有映射的文件，需要关闭
+        fileclose(p-&gt;vmas[i].file);
+      p-&gt;vmas[i].length = 0; // 清空 length，表示未使用
+    }
+  }
+
+  begin_op();
+  ...
+}
+</code></pre>
+<p>如果进程退出，遍历 <code>vmas</code> 数组，释放已经使用的 <code>vma</code>，并调用 <code>fileclose()</code> 关闭映射的文件。</p>
+<h3 id="修改-fork">修改 fork</h3>
+<p>Modify fork to ensure that the child has the same mapped regions as the parent. Don't forget to increment the reference count for a VMA's struct file. In the page fault handler of the child, it is OK to allocate a new physical page instead of sharing a page with the parent. The latter would be cooler, but it would require more implementation work. Run mmaptest; it should pass both mmap_test and fork_test.</p>
+<p>让 <code>fork()</code> 也支持内存映射功能：</p>
+<ol>
+<li><strong>修改 <code>fork</code>，把 爸爸进程 的映射区域 同样复制给 儿子进程</strong></li>
+<li><strong>复制 <code>vma</code> 时，记得调用 <code>filedup()</code> 增加文件的 引用计数</strong></li>
+</ol>
+<pre><code class="language-c">int
+fork(void)
+{
+  ...
+  np-&gt;state = RUNNABLE;
+
+  // 复制父进程的VMA
+  for(int i = 0; i &lt; 16; i++) { // length&gt;0 表示该 VMA 正在使用
+    if(p-&gt;vmas[i].length &gt; 0) {
+      // 复制爸爸的 vma
+      memmove(&amp;np-&gt;vmas[i], &amp;p-&gt;vmas[i], sizeof(struct vma));
+      if(p-&gt;vmas[i].file) // 调用 mmap 传进来的 fd ，要映射的文件
+        filedup(p-&gt;vmas[i].file); // 文件引用次数加一，因为现在子进程也在使用这个文件
+    }
+  }
+
+  release(&amp;np-&gt;lock);
+
+  return pid;
+}
+</code></pre>
+<h3 id="异常处理-uvmunmap-not-mapped">异常处理 uvmunmap: not mapped</h3>
+<p>mmap 的核心代码已经写完了，但是，当我们执行<code> mmaptest</code> 时，会遇到 &quot;<strong>panic: uvmunmap: not mapped</strong>&quot; 错误。</p>
+<p>这个错误是 <strong>解除内存映射 <code>uvmunmap()</code></strong> 函数抛出来的，因为 mmap 使用了 **懒加载（<em>lazy allocation</em>）**策略：</p>
+<ol>
+<li><strong><code>sys_mmap()</code> 函数中，<code>vma</code> 只记录了入参，没有实际分配物理内存。</strong></li>
+<li><strong><code>usertrap()</code> 中，首次访问这些页面时，才通过 缺页中断 分配物理内存。</strong></li>
+</ol>
+<p>所以在 <code>uvmunmap()</code> 时，可能存在一些页面从未被访问过，那它们的 页表项 就是无效的（<em><code>PTE_V = 0</code></em>），在本实验里面这种情况是正常的，不应该触发 panic，注释掉抛错代码即可。</p>
+<pre><code class="language-c">void
+uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
+{
+  ...
+  for(a = va; a &lt; va + npages*PGSIZE; a += PGSIZE){
+    if((pte = walk(pagetable, a, 0)) == 0)
+      panic(&quot;uvmunmap: walk&quot;);
+    if((*pte &amp; PTE_V) == 0)
+      continue; // 和懒加载实验一样，可能存在申请了内存但没使用，页表项可能是无效的
+      // panic(&quot;uvmunmap: not mapped&quot;);
+    ...
+  }
+}
+</code></pre>
+<h3 id="异常处理-page-not-present">异常处理: page not present</h3>
+<p>继续执行 <code>mmaptest</code> 测试程序，发现虽然 <code>mmap_test</code> 测试用例可以正常通过，但 <code>fork_test</code> 会出现 &quot;<strong>panic: uvmcopy: page not present</strong>&quot; 错误。</p>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1745759891905.png" alt="" loading="lazy"></figure>
+<p>这是因为在 <code>fork()</code> 过程中， <code>uvmcopy()</code> 函数尝试 复制 爸爸进程 的所有页面到 儿子进程 时，因为 <code>mmap()</code> 的 懒加载 机制，有些 已映射的页面 可能还没有 实际分配物理内存。</p>
+<p>解决方案是，注释掉 <code>uvmcopy()</code> 函数抛出的 panic 错误即可</p>
+<pre><code class="language-c">int
+uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+{
+  ...
+  for(i = 0; i &lt; sz; i += PGSIZE){
+    if((pte = walk(old, i, 0)) == 0)
+      panic(&quot;uvmcopy: pte should exist&quot;);
+    if((*pte &amp; PTE_V) == 0)
+      continue; // 复制的时候也可能存在申请了内存但没使用的情况，忽略异常
+//       panic(&quot;uvmcopy: page not present&quot;);
+    pa = PTE2PA(*pte);
+    ...
+    }
+  }
+  return 0;
+
+ err:
+  uvmunmap(new, 0, i / PGSIZE, 1);
+  return -1;
+}
+</code></pre>
+<p>最后一次运行 <code>mmaptest</code> 测试程序</p>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1745759899907.png" alt="" loading="lazy"></figure>
+<p>mmap_test 和 fork_test 都可以正常通过。</p>
+<p>再执行 <code>usertests</code></p>
+<figure data-type="image" tabindex="4"><img src="https://yibaoshan.github.io//post-images/1745759907707.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commits/mmap</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+<li>「实验记录」MIT 6.S081 Lab10 mmap：https://zhuanlan.zhihu.com/p/610226018</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab9-file-systems/" class="post-title gt-a-link">
+                     MIT6.S081 - Lab9 File Systems（文件系统）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

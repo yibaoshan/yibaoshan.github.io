@@ -1,0 +1,945 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>聊聊 Glide | 不看源码，只聊设计 | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    聊聊 Glide | 不看源码，只聊设计
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-06-15 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/open-source/" class="post-tags">
+                            # 开源库
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>Glide 是一个非常优秀、高性能的开源图片加载框架，从我入行开始一直到现在，工程里面的图片库几乎都是用它。</p>
+<p>截止到发稿，Glide 版本已经升到了 5.0，Java + Kotlin 代码总行数也膨胀到近 <strong>9w</strong> 行</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1750128462660.png" alt="" loading="lazy"></figure>
+<p>现在的 Glide 工程太庞大了，源码肯定是看不了一点</p>
+<p>所以，我准备从 3 步链式调用的代码入手，来尝试剖析 Glide 的功能与设计</p>
+<pre><code class="language-kotlin">Glide.with(context).load(url).into(imageView)
+</code></pre>
+<p>本文将从链式调用的三个方法作为入口，分别介绍 Glide 的 <strong>缓存复用机制</strong>、<strong>生命周期管理</strong>、<strong>预加载机制</strong>、<strong>图片的请求和转换</strong> 等功能</p>
+<ol>
+<li><strong>with(context)</strong>
+<ul>
+<li><strong>绑定生命周期</strong>，Glide 会在内部创建一个与该组件生命周期绑定的 RequestManager，这个 RequestManager 会监听传入的组件的生命周期事件
+<ul>
+<li>在 <code>onStop()</code> 时暂停请求。</li>
+<li>在 <code>onDestroy()</code> 时取消请求并释放相关资源（<em>如 Bitmap 内存</em>）。</li>
+</ul>
+</li>
+<li><strong>为 Glide 提供上下文</strong>，如果你接下来传入的是资源文件，那 Glide 需要 Context 才可以访问 Res，另外，磁盘缓存 涉及到的文件系统 也需要 Context 才能正常工作</li>
+</ul>
+</li>
+<li><strong>load(x)</strong>
+<ul>
+<li>入参可以是 String、Uri、File、DrawableRes、Bitmap 等</li>
+<li>这一步的工作主要是 定义请求 和一些准备工作，构建和配置 RequestBuilder 类，告诉 Glide 你想要加载什么图片，以及用什么方式加载</li>
+<li><code>load()</code> 后面的 <code>placeholder()</code>、<code>error()</code>、<code>centerCrop()</code>、<code>override()</code> 等都属于配置阶段，这些选项会被封装到一个 RequestOptions 对象中</li>
+</ul>
+</li>
+<li><strong>into(view)</strong>
+<ul>
+<li>这一步才是真正的请求触发和执行，常见的 <strong>缓存处理</strong>、<strong>BitmapPool</strong>、<strong>图片的转换处理</strong> 都在这个阶段</li>
+<li>入参通常是 ImageView，也可以是自定义 Target，同时 Glide 内置了几个 Target 给开发者使用，比如 ViewTarget、SimpleTarget</li>
+<li>不同的 target 的核心加载流程（<em>缓存、数据获取、解码、转换</em>）是基本一致的，只是最终的 “<strong>结果消费</strong>” 和 “<strong>显示方式”</strong> 不一样，这一点我们在第三节会详细介绍。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>全文基于 Glide v5.0.0：https://github.com/bumptech/glide/tree/v5.0.0-rc01</p>
+</blockquote>
+<figure data-type="image" tabindex="2"><img src="https://yibaoshan.github.io//post-images/1750128480001.png" alt="" loading="lazy"></figure>
+<h1 id="一-with-context">一、With context</h1>
+<p><code>Glide#with(context)</code> 是我们使用 Glide 的第一步，传入 Context 的作用开头已经介绍过了</p>
+<ul>
+<li>一是 <strong>绑定生命周期</strong>，Glide 会在内部创建一个与该组件生命周期绑定的 RequestManager，这个 RequestManager 会监听传入的组件的生命周期事件，用来管理请求。</li>
+<li>二是为 Glide 提供上下文，如果你接下来传入的是资源文件，那 Glide 需要 Context 才可以访问 Res，另外，磁盘缓存涉及到的 文件系统 也需要 Context 才能工作。</li>
+</ul>
+<p>本小节还会来探讨</p>
+<ol>
+<li>多次调用 <code> Glide#with()</code> 传入同一个 Activity/Fragment 对象，Glide 会不会也创建多个 RequestManager，理论上应该共用一个 RequestManager ，不然就是资源浪费了</li>
+<li>传入 <code>Application#Context</code> 和 Activity/Fragment ，结果有什么不一样？</li>
+</ol>
+<p>进入正文前，我们先来看 Glide 单例的初始化代码</p>
+<h2 id="glide-的初始化">Glide 的初始化</h2>
+<p>首次加载图片会触发 Glide 单例对象的创建和初始化</p>
+<p>Glide 的创建和初始化使用的是 <strong>建造者模式</strong>，由 GlideBuilder 负责构建配置，然后通过 <code>build()</code> 方法创建 Glide 对象。</p>
+<pre><code class="language-java">public final class GlideBuilder {
+    Glide build(context, manifestModules, annotationGeneratedGlideModule) {
+        
+        // step 1, init ThreadExecutor for Glide
+        sourceExecutor = GlideExecutor.newSourceExecutor();
+        diskCacheExecutor = GlideExecutor.newDiskCacheExecutor();
+        animationExecutor = GlideExecutor.newAnimationExecutor();
+
+        // step 2, init network monitor
+        connectivityMonitorFactory = new DefaultConnectivityMonitorFactory();
+
+        // step 3, init bitmapPool
+        memorySizeCalculator = new MemorySizeCalculator.Builder(context).build();
+
+        if (bitmapPool == null) {
+            int size = memorySizeCalculator.getBitmapPoolSize();
+            
+            if (size &gt; 0) bitmapPool = new LruBitmapPool(size);
+            else bitmapPool = new BitmapPoolAdapter();
+        }
+        
+        // step 4, init all of cache
+        arrayPool = new LruArrayPool(memorySizeCalculator.getArrayPoolSizeInBytes());
+        memoryCache = new LruResourceCache(memorySizeCalculator.getMemoryCacheSize());
+        diskCacheFactory = new InternalCacheDiskCacheFactory(context); // 250 MB of cache
+
+        // step 5, init engine
+        engine = new Engine(memoryCache, diskCacheFactory, diskCacheExecutor, sourceExecutor, animationExecutor);
+
+        return new Glide(context, engine, memoryCache, bitmapPool, arrayPool, requestManagerRetriever, connectivityMonitorFactory, logLevel, defaultRequestOptionsFactory, defaultTransitionOptions, manifestModules, annotationGeneratedGlideModule);
+    }
+}
+</code></pre>
+<p>在 <code>build()</code> 函数中，我们会看到很多熟悉的老面孔</p>
+<ol>
+<li><strong>初始化线程池</strong>
+<ul>
+<li>Glide 有好几个线程池，涉及网络、文件 I/O 和 Bitmap 解码/转换的操作都发生在这里的后台线程中。</li>
+<li>具体到初始化流程，有三个线程池被创建
+<ul>
+<li><code>sourceExecutor</code>，用于执行 I/O 密集型任务，如网络下载、大型文件读取。</li>
+<li><code>diskCacheExecutor</code>，专用于执行磁盘缓存的读写操作。</li>
+<li><code>animationExecutor</code>，用于处理 GIF 或其他动画的解码和帧更新。</li>
+</ul>
+</li>
+<li>在实际开发中，你可以设置为自己管理的线程池，只需要在 AppGlideModule 中，拿到 GlideBuilder 对象以后，调用 <code>setXXXExecutor</code> 即可。</li>
+</ul>
+</li>
+<li><strong>初始化网络连接状态监视器</strong>，DefaultConnectivityMonitorFactory，用来感知网络连接，网络不可用时自动暂停网络请求，在恢复时自动重启</li>
+<li><strong>设备性能计算器</strong>，MemorySizeCalculator 会根据设备内存大小和屏幕分辨率计算出，当前设备能够支持的 Bitmap 缓存池大小
+<ul>
+<li>如果用户设备性能不是很高，那么 <code>getBitmapPoolSize()</code> 可能会返回 0</li>
+<li>一旦返回 0 ，bitmapPool 会使用 BitmapPoolAdapter，这是一个 “空操作” 的 BitmapPool，Glide 在这台设备上不会执行 任何 Bitmap 的缓存和复用</li>
+<li>如果 <code>getBitmapPoolSize()</code> 大于 0 ，启用 LruBitmapPool</li>
+<li>LruBitmapPool 是个基于 LRU 策略的 Bitmap 复用池，如果你的应用有频繁创建/销毁 Bitmap 的场景，比如电商 APP，那复用 Bitmap 可以帮你减少 GC 次数，降低垃圾回收开销。</li>
+</ul>
+</li>
+<li>第四步分别初始化了 <strong>数组池</strong>，<strong>内存缓存</strong> 和 <strong>磁盘缓存</strong>
+<ul>
+<li>ArrayPool，与 BitmapPool 类似，用来减少数组（<em>支持 int[] 和 byte[]</em>）的频繁创建和回收，降低 GC 压力，大小由 <code>memorySizeCalculator</code> 决定</li>
+<li>MemoryCache，缓存已经解码并准备好显示的图片资源，避免重复解码和转换，Glide 性能优化点之一，大小同样由 <code>memorySizeCalculator</code> 决定，设备性能差的话就不缓存或者少缓存</li>
+<li>DiskCacheFactory，磁盘缓存，避免重复下载，默认大小是 <code>DEFAULT_DISK_CACHE_SIZE</code> = 250MB，对你没看错，就是 250😂，当然你可以自定义 AppGlideModule 然后修改缓存大小</li>
+</ul>
+</li>
+<li><strong>初始化核心引擎 Engine</strong>
+<ul>
+<li>类如其名，能用 Engine 命名的类都不一般</li>
+<li>它负责 接收请求、管理缓存查找 (MemoryCache 和 DiskCache)、调度 DecodeJob 到不同的线程池、请求去重、解码回调 Request 等等工作</li>
+<li>Engine 类跟 Glide 类的关系，比较像主力员工和老板的关系</li>
+<li>老板 Glide 负责对外开放接口，收集甲方各种各样的需求，回家关起门要 Engine 类去做具体的事情，Engine 负责 拆解任务 然后去执行，中间还得上报工作进度</li>
+</ul>
+</li>
+</ol>
+<h2 id="绑定组件生命周期">绑定组件生命周期</h2>
+<p>然后我们来看 Glide 是怎么利用入参的 Context 绑定组件的生命周期的</p>
+<p><code>Glide#with()</code> 是一个 静态函数，并且有不同的 重载版本，返回值是一个 RequestManager 对象</p>
+<figure data-type="image" tabindex="3"><img src="https://yibaoshan.github.io//post-images/1750128492048.png" alt="" loading="lazy"></figure>
+<p>不管传入的 Context 是 Activity 还是 Fragment，最终都转交给 <code>RequestManagerRetriever#get()</code> 方法处理，得到两种类型的 RequestManager ：</p>
+<ol>
+<li><strong>Application 级别的 RequestManager</strong>
+<ul>
+<li>传入的是抽象类 Context 或者是 View，Glide 会遍历查找当前 View/Context 所属的 Act，如果 Act 为空或者不是 FragmentAct，那么，使用 Application 的生命周期</li>
+<li>如果传入的是原生的 android.app.Activity 对象，也会使用  Application 的生命周期，原因未知，有知道的小伙伴可以在评论区留言</li>
+<li>另外，如果你是在非 UI 线程调用的 <code>Glide#with()</code>，即使你的 Context 是 Act 或 Frag，也会返回 Application 级别的 RequestManager</li>
+</ul>
+</li>
+<li><strong>FragmentActivity 和 Fragment</strong>
+<ul>
+<li>它俩都实现了 Lifecycle 接口，所以，Glide 的 LifecycleRequestManagerRetriever 类，负责管理和提供这些有 lifecycle 的 RequestManager 实例</li>
+<li>如果 Lifecycle 通知销毁，LifecycleRequestManagerRetriever 也会清楚对应的 RequestManager 和自己的映射</li>
+<li>Map&lt;Lifecycle, RequestManager&gt; <code>lifecycleToRequestManager</code> 来保证，每个 Act/frag 对应一个 RequestManager</li>
+<li>RequestManager 有了 Lifecycle ，也就拥有 <strong>感知生命周期</strong> 的能力，这是它和 Application 级别的 RequestManager 最大的区别</li>
+</ul>
+</li>
+</ol>
+<p>一旦被认为需要返回 Application 级别的 RequestManager，那么，<strong>本次请求的生命周期将会和 Application 的生命周期一样长</strong>，<strong>而且，请求过程中不会自动暂停、恢复或取消，除非请求完成或者发生错误。</strong></p>
+<p>而 FragmentActivity 和 Fragment 的 RequestManager 因为有来自 Lifecycle 的回调，所以能够在 <code>onStart()</code>、<code>onStop()</code>、<code>onDestroy()</code> 这几个时机自动执行 开始/恢复、暂停、取消 等操作。</p>
+<pre><code class="language-java">  /**
+   * Lifecycle callback that cancels all in progress requests and clears and recycles resources for
+   * all completed requests.
+   */
+  @Override
+  public synchronized void onDestroy() {
+    targetTracker.onDestroy();
+    clearRequests();
+    requestTracker.clearRequests();
+    lifecycle.removeListener(this);
+    lifecycle.removeListener(connectivityMonitor);
+    Util.removeCallbacksOnUiThread(addSelfToLifecycle);
+    glide.unregisterRequestManager(this);
+  }
+</code></pre>
+<h3 id="1-无-ui-fragment-去哪了">1. 无 UI Fragment 去哪了？</h3>
+<p>细心的朋友可能已经发现了，现在 RequestManager 感知生命周期的能力，是由 Jetpack 的 Lifecycle 组件提供</p>
+<p>原来的利用无 UI 的 Fragment 感知生命周期变化的那一套已经被弃用了，成为了过去式</p>
+<figure data-type="image" tabindex="4"><img src="https://yibaoshan.github.io//post-images/1750128507465.png" alt="" loading="lazy"></figure>
+<p>查看 Git 提交记录发现，在2023年的3月10号，无 UI 的 <s>SupportRequestManagerFragment</s> 类被标记为启用</p>
+<p>并且，配合它执行生命周期调度的 <s>ActivityFragmentLifecycle</s> 类也被删除。</p>
+<h3 id="2-短暂的内存泄漏风险">2. 短暂的内存泄漏风险</h3>
+<p>最后，还有个关于生命周期的点需要注意，虽然 FragmentActivity/Fragment 有 Lifecycle 可以自动释放资源，但如果使用不当，还是有内存泄漏的风险的</p>
+<p>假设这么个场景，你在 Act/Frag 中调用 <code>Glide#with()</code> 不小心传错 Context 了，本来想传的是 <code>this</code>，结果传入了 Application 的上下文，<code>into()</code> 的 Target 又引用了 Act/Frag</p>
+<p><strong>如果此时页面被关闭了，那么在 request 结束之前，Act/Frag 是无法被正常回收的，会发生一个短暂的 内存泄漏</strong></p>
+<h1 id="二-load-source">二、Load source</h1>
+<p><code>load()</code> 的主要工作是构建 RequestBuilder 对象，组装 Request，告诉 Glide 我要从哪里加载图片、用什么方式加载</p>
+<h2 id="图片数据源">图片数据源</h2>
+<p><code>load()</code> 函数接受 9 种不同类型的数据源：Bitmap、Drawable、String、Uri、File、Integer、URL、byte[]、Object</p>
+<p>在组装阶段，不管你传入的是什么，Glide 都只会调用 <code>loadGeneric()</code> 函数，把它们保存到 Object 类型的成员变量 <code>model</code> 中，不校验参数合法性</p>
+<pre><code class="language-java">private Object model; // 数据源
+
+private RequestBuilder&lt;TranscodeType&gt; loadGeneric(@Nullable Object model) {
+    this.model = model;
+    isModelSet = true;
+    return this;
+}
+</code></pre>
+<p>以 String 举例，你传入的可能个是本地的文件路径，也可能是一个网络地址，又或者穿了个空字符， Glide 都不会去检查参数是否合法，具体的校验工作放在了后续的 执行阶段 里面（通过 ModelLoader 和 ResourceDecoder）</p>
+<pre><code class="language-java">public RequestBuilder&lt;TranscodeType&gt; load(@Nullable String string) {
+  return loadGeneric(string);
+}
+</code></pre>
+<p>另外还有一点需要知道的是，如果你的数据源是 <code>byte[]</code> 数组、Bitmap 这种存在于内存中的资源，Glide 会将 DiskCacheStrategy 设置为 <code>NONE</code>，因为它们不需要磁盘缓存</p>
+<pre><code class="language-java">public RequestBuilder&lt;TranscodeType&gt; load(@Nullable Bitmap bitmap) {
+    return loadGeneric(bitmap).apply(diskCacheStrategyOf(DiskCacheStrategy.NONE));
+}
+</code></pre>
+<h2 id="构建-requestoption">构建 RequestOption</h2>
+<p>除了设定图片的数据源，在组装阶段，Glide 还为我们提供 占位符、预加载 等功能</p>
+<h3 id="1-占位符">1. 占位符</h3>
+<p>Glide 目前支持三种 占位符</p>
+<ul>
+<li><code>placeholder(int drawableRes)</code>，开始加载、加载过程中显示的占位图片，一般是一个静态的资源</li>
+<li><code>error(int drawableRes)</code>，加载失败/错误的时候显示的图片，比如图片数据源错误啊、网络错误、图片格式不对无法解析啊等等，一般也是静态资源</li>
+<li><code>fallback(int drawableRes)</code>，<strong>优先级最高</strong> 的占位符，如果图片的数据源是空的，比如用户头像的 URL 为空就会显示 <code>fallback</code> 的资源
+<ul>
+<li>如果 <code>fallback</code> 被触发，那么，前面两个 <code>placeholder</code> 和 <code>error</code> 都不会显示，因为无法发起加载请求</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-预加载">2. 预加载</h3>
+<p>预加载 是指先把图片加载到内存中，轮到这张图片显示的时候可以直接从内存中读取，避免了加载图片的等待时间。是项目中常用的 <strong>优化用户体验</strong> 的手段之一，我们在多个项目中都有实际使用</p>
+<p><code>preload()</code> 函数有两个重载版本，一个是 <strong>需要指定宽高</strong>，另一个是 <strong>无参函数</strong>，默认加载 <code>SIZE_ORIGINAL</code> 原图尺寸</p>
+<pre><code class="language-java">  public Target&lt;TranscodeType&gt; preload(int width, int height) {
+    final PreloadTarget&lt;TranscodeType&gt; target = PreloadTarget.obtain(requestManager, width, height);
+    return into(target);
+  }
+
+  public Target&lt;TranscodeType&gt; preload() {
+    return preload(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
+  }
+</code></pre>
+<p>Glide 预加载的使用条件还是比较 <strong>苛刻</strong> 的，使用的时候一定注意：</p>
+<p><strong>想要成功命中缓存，除了要求预加载时的 链接 和最终使用的链接是一样的以外，还必须保证 宽高、转换信息 等参数也都是相同的</strong></p>
+<p><strong>否则，Glide 会认为这是 两个不同的请求，不会命中内存缓存</strong>（<em>我们在线上吃过亏</em>）</p>
+<p>接下来，我们通过一个小栗子来看看，应该如何正确使用 Glide 的 预加载 功能，Demo 代码如下：</p>
+<figure data-type="image" tabindex="5"><img src="https://yibaoshan.github.io//post-images/1750128523725.png" alt="" loading="lazy"></figure>
+<ul>
+<li>第一个 红色按钮，负责调用 Glide 无参的 <code>preload()</code> 方法，执行图片的 预加载</li>
+<li>第二个 绿色按钮，调用了 指定宽高的 <code>preload()</code> 方法，并且选择了 <code>CenterCrop()</code> 转换，这是为了和 xml 中的 ImageView 配置保持相同</li>
+<li>最下面的 蓝色按钮，调用 <code>load.into(url)</code> 方法，尝试以 <strong>忽略磁盘缓存并只从内存缓存读取</strong> 的方式来加载图片，<strong>不会真的发起网络请求</strong></li>
+</ul>
+<p>理论上，如果 红/绿 的 <code>preload()</code> 预加载 方法执行成功，那点击 蓝色按钮 后，应该可以正确的 从缓存中读取图片 并显示，对吧</p>
+<p>我们一起来看下运行结果：</p>
+<figure data-type="image" tabindex="6"><img src="https://yibaoshan.github.io//post-images/1750128535520.gif" alt="" loading="lazy"></figure>
+<p>如图所示，先点击 红色按钮 执行 <strong>无参预加载</strong>，再点 蓝色按钮 尝试 <strong>从内存获取图片</strong>，ImageView 显示空白，说明此次 <strong>未命中内存缓存</strong>，缓存获取失败</p>
+<p>然后再点击第二个 绿色按钮 执行 <strong>参数匹配的预加载</strong>，此时再点击 蓝色按钮 发现 ImageView 正常显示出头像照片，这说明此次 <strong>成功命中内存缓存</strong></p>
+<p>为什么会出现这样的情况？答案就藏在 Glide 的 EngineKey 类里</p>
+<h3 id="3-为什么我的预加载不生效">3. 为什么我的预加载不生效？！！</h3>
+<pre><code class="language-java">class Engine {
+    public &lt;R&gt; LoadStatus load(Object model, Key signature, int width, int height, Map&lt;Class&lt;?&gt;, Transformation&lt;?&gt;&gt; transformations,Class&lt;?&gt; resourceClass,Class&lt;R&gt; transcodeClass,Options options){
+        // 1、根据数据源、宽高、转换信息、构建信息等等生成一个 key
+        EngineKey key = keyFactory.buildKey(model, signature, width, height, transformations, resourceClass, transcodeClass, options);
+        // 2、再根据 EngineKey 查询内存缓存
+        memoryResource = loadFromMemory(key, isMemoryCacheable, startTime);
+    }
+}
+
+class EngineKey implements Key {
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof EngineKey) {
+            EngineKey other = (EngineKey) o;
+            return model.equals(other.model) &amp;&amp; signature.equals(other.signature) &amp;&amp; height == other.height &amp;&amp; width == other.width &amp;&amp; transformations.equals(other.transformations) &amp;&amp; resourceClass.equals(other.resourceClass) &amp;&amp; transcodeClass.equals(other.transcodeClass) &amp;&amp; options.equals(other.options);
+        }
+        return false;
+    }
+}
+</code></pre>
+<p>在 <code>Engine#load()</code> 加载图片阶段，会先调用 <code>loadFromMemory()</code> 函数，尝试从 内存缓存 中获取图片，获取成功则直接返回，否则才执行网络请求，重点来了：</p>
+<ul>
+<li>Glide 会根据 <strong>数据源</strong>（<em>我们这里是图片的 URL 链接</em>）、<strong>宽高</strong>、<strong>转换信息</strong> 等参数生成一个 EngineKey</li>
+<li>这个 EngineKey 会作为查询缓存的 <strong>唯一标识</strong>
+<ul>
+<li>在 Glide 的 内存缓存 中，<code>ActiveResources</code> 和 <code>LruResourceCache</code> 内部都是使用 Map 存储的</li>
+<li>Map 对比键值，调用的是对象的 <code>equals()</code> 方法，如果相同则返回 true</li>
+<li>再看 EngineKey 类，它重写了 <code>equals()</code> 方法，对比的就是 <code>model</code>、<code>signature</code>、<code>width</code>、<code>height</code>、<code>transformations</code>、<code>resourceClass</code>、<code>transcodeClass</code>、<code>options</code> 这些东西</li>
+</ul>
+</li>
+</ul>
+<p>所以，<strong>如果你在 调用 <code>preload()</code> 设置的<code>model</code>、<code>width</code>、<code>height</code>、<code>transformations</code> 等参数，和最终 <code>load().into()</code> 的时候不一样，那在 Glide 看来你这属于 两个不同的请求，也就不会 命中缓存 了</strong></p>
+<p>我们来 debug 验证一下</p>
+<figure data-type="image" tabindex="7"><img src="https://yibaoshan.github.io//post-images/1750128547547.png" alt="" loading="lazy"></figure>
+<p>第一次调用 无参 <code>preload()</code>，宽高是 <code>Integer.MIN_VALUE</code> 表示不限制，按照 原图尺寸 加载，然后 转换列表 是空的</p>
+<figure data-type="image" tabindex="8"><img src="https://yibaoshan.github.io//post-images/1750128555965.png" alt="" loading="lazy"></figure>
+<p>预加载 完成，第一次 尝试 读取缓存 到 ImageView，获取缓存失败</p>
+<p>这一步就能看出问题来了，正式 <code>into</code> 请求的宽高是 ImageView 宽高的 px 值，正式的 转换列表 中也有 4 个元素，显然和 预加载 的配置是不一样的</p>
+<figure data-type="image" tabindex="9"><img src="https://yibaoshan.github.io//post-images/1750128564008.png" alt="" loading="lazy"></figure>
+<p>接着我们使用和 xml 中 ImageView 配置相同 的参数，再来一次 预加载 请求</p>
+<p>这次调用的是 <code>preload(width, height)</code> 方法</p>
+<figure data-type="image" tabindex="10"><img src="https://yibaoshan.github.io//post-images/1750128571484.png" alt="" loading="lazy"></figure>
+<p>第二次 尝试从 内存缓存 中读取图片，成功命中缓存，ImageView 显示正常</p>
+<p>做个小结</p>
+<p>如果我们想要在项目中使用 预加载 功能，<strong>一定要注意 <code>preload()</code> 的 参数设置，尤其是 <code>width</code>、<code>height</code>、<code>transformations</code> 这三项，要和目标 ImageView 的配置 保持一致</strong></p>
+<p>参数不一致是无法命中缓存的，只会白白浪费了 CPU、内存和流量资源。</p>
+<blockquote>
+<p><em>本次 Demo 代码我放在 Github 仓库了，感兴趣的朋友可以点击链接查看：https://github.com/yibaoshan/yibaoshan/blob/master/application-android-ui-card-slide-sample/src/main/java/cn/ybs/card/slide/GlidePreloadTestActivity.kt</em></p>
+</blockquote>
+<h3 id="4-裁剪和转换">4. 裁剪和转换</h3>
+<p>继续来看 RequestBuilder 的其他功能</p>
+<p>Glide 支持图片 <strong>裁剪和转换</strong> 功能，它提供了像 圆形裁剪 <code>CircleCrop()</code>、高斯模糊 <code>BlurTransformation</code>、灰度处理 <code>GrayscaleTransformation</code> 等内置的转换，另外还提供了自定义转换 <code>transform()</code> 和 指定尺寸 <code>override()</code> 的功能</p>
+<p>像一般的 <code>centerCrop</code>、<code>fitCenter</code> 啥的不需要单独设置，Glide 会自动读取 ImageView 的 <code>ScaleType</code> 信息，然后解析成对应的 缩放效果 保存到 <code>requestOptions</code> 对象</p>
+<pre><code class="language-java">class RequestBuilder {
+    public ViewTarget into(ImageView view) {
+        ...
+        switch (view.getScaleType()) { // into 阶段，会根据 scaleTpye 设置不同的缩放
+            case CENTER_CROP:
+                requestOptions = requestOptions.clone().optionalCenterCrop();
+                break;
+            case CENTER_INSIDE:
+                requestOptions = requestOptions.clone().optionalCenterInside();
+                break;
+            case FIT_CENTER:
+            case FIT_START:
+            case FIT_END:
+                requestOptions = requestOptions.clone().optionalFitCenter();
+                break;
+            case FIT_XY:
+                requestOptions = requestOptions.clone().optionalCenterInside();
+                break;
+            case CENTER:
+            case MATRIX:
+            default: // Do nothing.
+        }
+        ...
+    }
+}
+</code></pre>
+<h3 id="5-缓存策略">5. 缓存策略</h3>
+<p>Glide 提供了两种 缓存策略，一是 <strong>内存缓存</strong>，二是 <strong>磁盘缓存</strong>，如果你不想使用缓存，或者只想使用缓存，Glide 也提供了 API 允许你自定义</p>
+<ul>
+<li><code>skipMemoryCache</code>，默认 false，设为 true 的话，Glide 不会从 内存缓存 中加载图片，同时也不会将图片存入 内存缓存</li>
+<li><code>diskCacheStrategy</code>，指定磁盘的 缓存策略，现在默认是 <code>AUTOMATIC</code> 智能模式，另外四个选项是：
+<ul>
+<li><code>ALL</code>，缓存原图和转换后的图片、<code>NONE</code>，禁用磁盘缓存、<code>DATA</code>，只缓存原图、<code>SOURCE</code>，只缓存转换后的图片</li>
+</ul>
+</li>
+<li><code>onlyRetrieveFromCache</code>，只从缓存中加载图片，不发起 网络请求，缓存范围包括 内存缓存 和 磁盘缓存，默认 false</li>
+</ul>
+<p>另外，RequestBuilder 还支持设置监听、过渡动画、制定解码为 Bitmap、Gif、File 等功能，我这里就不一一展开了</p>
+<blockquote>
+<p><em>更多关于 RequestBuilder 的信息可点击链接查看：https://github.com/bumptech/glide/blob/v5.0.0-rc01/library/src/main/java/com/bumptech/glide/RequestBuilder.java</em></p>
+</blockquote>
+<h1 id="三-into-target">三、Into target</h1>
+<p>链式调用的最后一步是 <code>into()</code> 函数，它接收 Target 类型的参数，作用是告诉 Glide，开发者想把图片加载到哪？是直接显示到 ImageView ，还是以 File、Bitmap 的形式回调给开发者。</p>
+<p>设置完 Target 后，接下来会真正进入图片的加载和显示流程，整个过程大概可以分为以下几个阶段：</p>
+<ol>
+<li>**Engine！启动！，**前面两个章节构建的 Request 最终会转交给 Glide 的核心组件 Engine 去执行，<code>Engine#load()</code> 是整个执行阶段的启动点</li>
+<li><strong>查找缓存</strong>，Engine 接到请求后，会首先检查 内存缓存，如果没有则继续查找 磁盘缓存，都没有才去 请求数据</li>
+<li><strong>请求图片数据</strong>，Glide 先会校验数据源是否合法，然后根据不同的数据源使用不同的 ModelLoader，是文件就去读取文件，是链接就发起网络请求去下载
+<ul>
+<li>另外，<code>Glide#load()</code> 是支持传入 Object 类型的任意值的，所以，如果你有自定义图片源的需求，可以在这一步继承 ModelLoader 去处理</li>
+</ul>
+</li>
+<li><strong>解码与转换</strong>，原始图片数据获取成功后，会被传递给合适的 ResourceDecoder 执行解码和转换
+<ul>
+<li>以网络图片举例，图片下载完成以后，会交给 StreamBitmapDecoder 解码成 Bitmap 并执行 <code>transform()</code> 操作</li>
+</ul>
+</li>
+<li><strong>回调结果</strong>，Glide 利用 Handler 机制 切换回主线程，把已经准备好的资源交付给最开始的 Target，本次的 Request 的工作全部结束，最后会执行一些收尾的清理工作
+<ul>
+<li>还是以 网络图片 + ImageView 举例，<code>ImageViewTarget#onResourceReady()</code> 方法被回调，接着调用 <code>setImageDrawable()</code> 把图片显示到 ImageView 上</li>
+</ul>
+</li>
+</ol>
+<p>从上面的流程可以看出来，执行阶段 基本就是 Engine 按照前两步的配置在干活，开发者在这一步能做的事情不多</p>
+<p>所以，本小节我准备换种风格，简单介绍一下，<code>into()</code> 各个阶段做的事情以及对应的源码路径</p>
+<h2 id="engine启动">Engine！启动！</h2>
+<p><code>into()</code> 既是 Glide 链式调用 的 终点，又是整个 加载阶段 的 起点</p>
+<h3 id="1-构建-request">1. 构建 Request</h3>
+<pre><code class="language-java">// class RequestBuilder
+private &lt;Y extends Target&lt;TranscodeType&gt;&gt; Y into() {
+    // 构建 Request 对象，包含 Model、Options、Target 等所有信息
+    Request request = buildRequest(target, targetListener, options, callbackExecutor);
+    // 将 Request 对象，提交给 RequestManager 执行调度
+    requestManager.track(request, target);
+}
+</code></pre>
+<p><code>into()</code> 函数中，会根据我们当前的配置和  Target 创建一个 Request 对象，然后提交给 RequestManager 去调度</p>
+<p>还记得 RequestManager 吗？它是第一步 <code>Glide#with(context)</code> 创建的，用来管理当前绑定组件的生命周期下，所有的 Request</p>
+<p>如果页面关闭，RequestManager 会自动取消所有 正在执行 的任务</p>
+<pre><code>requestManager#track() -&gt; requestTracker#runRequest(request) -&gt; request#begin() -&gt; SingleRequest#begin()
+</code></pre>
+<p>然后经过 层层转发，最终会进入到 <code>SingleRequest#begin()</code> 函数</p>
+<h3 id="2-requestbegin">2. Request#begin()</h3>
+<pre><code class="language-java">// class SingleRequest
+public void begin() {
+   if (model == null) return;
+   // 检查开发者是否已经通过 override() 设置了期望宽高
+   if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
+      onSizeReady(overrideWidth, overrideHeight); // 如果设置了，直接调用 onSizeReady，这是 engine 的启动点
+   } else {
+      target.getSize(this); // 没设置的画，向 target 注册 SizeReadyCallback 回调，一般来说，这里的 target 是 ViewTarget
+   }
+   // 通知 target 我们已经开始了，你可以显示占位符 Drawable 了
+   target.onLoadStarted(getPlaceholderDrawable());
+}
+</code></pre>
+<p><code>begin()</code> 函数中，一个主要的工作是，<strong>确定 ImageView 的尺寸</strong></p>
+<p>一般来说我们不太会调用 <code>override()</code> 指定尺寸，所以，在大多数的情况下，<code>begin()</code> 的逻辑分支都会走 else ，即 <code>ViewTarget#getSize()</code></p>
+<p>篇幅原因，我们这里不展开 <code>ViewTarget#getSize()</code> 函数了</p>
+<p>我们只需要知道，<strong>ViewTarget 是利用 View 所持有的 ViewTreeObserver，注册了 OnPreDrawListener 回调实现的 ImageView 尺寸感知 功能</strong></p>
+<p><strong><code>ViewTreeObserver#OnPreDrawListener</code> 会在 布局完成后、绘制开始前 调用 <code>onPreDraw()</code> 通知观察者，Glide 收到通知后，查询到 ImageView 宽高信息并回调给 <code>SingleRequest#onSizeReady()</code></strong></p>
+<h3 id="3-engineload">3. Engine#load()</h3>
+<p><code>onSizeReady()</code> 中把所有在 <code>load()</code> 阶段配置好的参数，连同刚刚传进来 ImageView 的尺寸，一股脑全部塞给 <code>Engine#load()</code> 方法</p>
+<pre><code class="language-java">// class SingleRequest
+public void onSizeReady(int width, int height) {
+   engine.load(
+           glideContext,
+           model,
+           this.width,
+           this.height,
+           requestOptions,
+           this); // SingleRequest 自身作为回调，用来接收 Engine 任务结果
+}
+</code></pre>
+<p>同时，SingleRequest 因为实现了 ResourceCallback 的接口，所以，自身也被作为 Engine 回调传了进去</p>
+<p><strong>这意味着 Engine 在任务完成后，可以通过这个回调对象通知 SingleRequest，然后 SingleRequest 再把结果传递给前面的 Target</strong></p>
+<p>至此，所有的准备工作全部完成，接下来正式进入 加载流程</p>
+<h2 id="查找缓存">查找缓存</h2>
+<p>加载的第一步，是 查找缓存，如果缓存有的话就不用发起网络请求了</p>
+<p>缓存的查找顺序是：<strong>内存缓存 -&gt; 磁盘缓存</strong></p>
+<h3 id="1-内存缓存">1. 内存缓存</h3>
+<p>查找 内存缓存 的部分，我们在《<strong>为什么我的预加载不生效？！！</strong>》小节里已经介绍过了，简单回顾一下</p>
+<pre><code class="language-java">// class Engine
+public &lt;R&gt; LoadStatus load(){
+   EngineKey key = keyFactory.buildKey(...);
+   EngineResource&lt;?&gt; memoryResource = loadFromMemory(key);
+}
+
+private EngineResource&lt;?&gt; loadFromMemory(key) {
+   EngineResource&lt;?&gt; active = loadFromActiveResources(key); // 优先从活跃缓存中读取
+   EngineResource&lt;?&gt; cached = getEngineResourceFromCache(key); // 否则从 LRU 缓存中读取
+   return active | cached;
+}
+</code></pre>
+<p>以加载参数作为 <code>key</code>，先后尝试从 ActiveResources 和 LruResourceCache 中读取缓存数据</p>
+<p>ActiveResources 和 LruResourceCache 都是内存缓存，并且，内部都是由 Map 进行存储，它俩的区别是：</p>
+<ul>
+<li><strong>ActiveResources</strong> 保存的是，当前 <strong>正在被使用的图片</strong>，表示它最少被一个 ImageView 显示
+<ul>
+<li>正在被显示的图片，是不能加入到 LRU 缓存中去的，因为 LRU 可能会删除最少使用的图片</li>
+<li>假设有个顶部显示头像，下面是商品列表的页面，你也不想看到用户划着划着，头像突然变空白了是吧夫人</li>
+</ul>
+</li>
+<li><strong>LruResourceCache</strong> 缓存的是，当前没有被 ImageView 引用的图片，容量有限，按 最远最少使用 规则删除，具体大小是动态计算出来的，要看用户设备的配置</li>
+</ul>
+<h3 id="2-磁盘缓存">2. 磁盘缓存</h3>
+<p>磁盘缓存 的读取比较复杂，因为涉及到 磁盘 I/O，这部分的工作是在 子线程 中执行的</p>
+<p>磁盘缓存 也分为两种，一个是 ResourceCache，另一个是 DataCache，它俩的区别是，前者缓存 <strong>经过转换后的图片数据</strong>，后者是 <strong>原始图片数据</strong></p>
+<p>我们这里简单看一下两个 磁盘缓存 的查找逻辑，不展开具体的调用链路</p>
+<pre><code class="language-java">class ResourceCacheGenerator {
+    @Override
+    public boolean startNext() {
+        ResourceCacheKey currentKey = new ResourceCacheKey(sourceId, getSignature(), getWidth(), getHeight(), transformation, resourceClass, getOptions());
+        cacheFile = helper.getDiskCache().get(currentKey); // 具体查找的事儿交个 DiskLruCache 类去做
+        return true;
+    }
+    
+}
+</code></pre>
+<p>首先是 ResourceCache，和 内存缓存 类似，也是根据 <code>宽高</code>、<code>转换信息</code> 生成唯一 <code>key</code></p>
+<p>然后交给 DiskLruCache 去 磁盘缓存 中查找是否命中，如果命中，直接解码使用</p>
+<pre><code class="language-java">class DataCacheGenerator {
+    
+    @Override
+    public boolean startNext() {
+        Key originalKey = new DataCacheKey(sourceId, getSignature());
+        cacheFile = helper.getDiskCache().get(originalKey);
+        return true;
+    }
+}
+</code></pre>
+<p>然后来看，保存原始图片的 DataCache</p>
+<p>从代码可以看到， DataCacheKey 只需要 签名信息（图片的 url），不包含 <code>尺寸</code>、<code>转换</code> 等信息，如果命中，也是直接解码使用</p>
+<p>也就是说，原始图片的磁盘缓存，<strong>只校验链接是否相同，对于同一个链接，如果命中 磁盘缓存，会直接返回给上一层使用</strong></p>
+<h2 id="请求图片数据">请求图片数据</h2>
+<p>如果内存缓存和磁盘缓存都没有命中，Glide 就会发起网络请求去下载图片，下载工作还是发生在 DecodeJob 中</p>
+<p>DecodeJob 中维护了一个 状态机，负责调用子线程中的所有工作</p>
+<p>因为磁盘缓存没命中，所以接下来 DecodeJob 会重新调度，把任务从 DiskCacheExecutor 切换到 SourceExecutor</p>
+<pre><code class="language-java">class SourceGenerator {
+
+    private void startNextLoad(final LoadData&lt;?&gt; toStart) {
+        loadData.fetcher.loadData(helper.getPriority(),
+                new DataCallback&lt;Object&gt;() {
+                    @Override
+                    public void onDataReady(@Nullable Object data) {
+                        onDataReadyInternal(toStart, data);
+                    }
+
+                    @Override
+                    public void onLoadFailed(@NonNull Exception e) {
+                        onLoadFailedInternal(toStart, e);
+                    }
+                });
+    }
+}
+</code></pre>
+<p><code>loadData#fetcher#loadData()</code> 是真正发起网络请求获取数据的地方</p>
+<p>其中用到的 DataFetcher 接口有多个实现，单是网络就有 OkHttpStreamFetcher 和 HttpUrlFetcher 两种</p>
+<figure data-type="image" tabindex="11"><img src="https://yibaoshan.github.io//post-images/1750128583928.png" alt="" loading="lazy"></figure>
+<p>目前 Glide v5.0 版本，是使用 OkHttpStreamFetcher 作为默认的网络数据获取器</p>
+<pre><code class="language-java">class OkHttpStreamFetcher {
+
+    public void loadData(DataCallback&lt;? super InputStream&gt; callback) {
+        Request.Builder requestBuilder = new Request.Builder().url(url.toStringUrl());
+        Request request = requestBuilder.build();
+        call = client.newCall(request);
+        call.enqueue(this); // 发起异步网络请求，自身作为回调
+    }
+
+    public void onResponse(Call call, Response response) {
+        responseBody = response.body();
+        if (response.isSuccessful()) {
+            callback.onDataReady(responseBody.byteStream()); // 回调给 SourceGenerator
+        } else {
+            callback.onLoadFailed(new HttpException(response.message(), response.code()));
+        }
+    }
+}
+</code></pre>
+<p><code>OkHttpStreamFetcher#loadData()</code> 负责构建 call 对象，然后会 起一个后台线程去执行 网络请求</p>
+<p>等到 OkHttp 结果返回后，回调给 <code>SourceGenerator#onDataReadyInternal()</code> 执行下一步的 解码 工作</p>
+<pre><code class="language-java">class SourceGenerator {
+
+    private void startNextLoad(final LoadData&lt;?&gt; toStart) {
+        loadData.fetcher.loadData(helper.getPriority(), new DataCallback&lt;Object&gt;() {
+                    @Override
+                    public void onDataReady(@Nullable Object data) {
+                        onDataReadyInternal(data); // 成功拿到图片原始文件
+                    }
+                });
+    }
+
+    void onDataReadyInternal(LoadData&lt;?&gt; loadData, Object data) {
+        // 缓存原始数据到磁盘（逻辑删减版）
+        DataCacheKey newOriginalKey = new DataCacheKey(loadData.sourceKey, helper.getSignature());
+        diskCache.put(newOriginalKey, data);
+        // 回调通知上一层
+        cb.onDataFetcherReady(loadData.sourceKey, data, loadData.fetcher, loadData.fetcher.getDataSource(), originalKey);
+    }
+}
+</code></pre>
+<p><code>onDataReadyInternal()</code> 的工作比较简单，就是把数据缓存到磁盘（如果需要的话），然后回调给上一层，也就是 EngineJob</p>
+<p>不过，EngineJob 自身并不直接负责解析工作，它负责调度每个阶段的任务协调者，接下来的解码和转换工作还是会被丢回原来的 DecodeJob 实例</p>
+<p>图片的 原始文件 已经准备就绪，接下来进入 解码、转换 流程</p>
+<h2 id="解码与转换">解码与转换</h2>
+<p>图片的解码和转换是 Engine 的核心工作之一</p>
+<p>在这一小节，我们还会见到除了 内存缓存 和 磁盘缓存 的另一种缓存：<strong>BitmapPool 缓存池</strong></p>
+<p>开始之前，先来认识几个新角色</p>
+<ul>
+<li>上一小节结束后，图片的原始数据（<em>下载的网络图片数据类型通常是 InputStream</em>）回调到 DecodeJob，等待进一步处理</li>
+<li>DecodeJob 从名字看，它就是负责解码工作的类，实际上，图片的解码转换工作是由 LoadPath、DecodePath、ResourceDecoder 和 ResourceTranscoder 这几个类去完成</li>
+<li>LoadPath、DecodePath、ResourceDecoder、ResourceTranscoder 就是本小节的新角色，它们共同完成图片 解码到转换 的工作，具体来说：
+<ul>
+<li><code>ResourceDecoder&lt;DataType, ResourceType&gt;</code> 资源解码器，负责把入参的 DataType 解码成 ResourceType
+<ul>
+<li><code>DataType</code>, <code>ResourceType</code>, <code>Transcode</code>，这三个泛型参数，分别表示原图的数据类型、解码后的数据类型和转换后的数据类型</li>
+<li>以加载网图到 IV 举例，<code>DataType</code> 对应 InputStream, <code>ResourceType</code> 对应 Bitmap，转换后类型是 Drawable</li>
+<li>ResourceDecoder 是个接口，加载网图的解码器实现类是 StreamBitmapDecoder，它负责把 InputStream 解码为 Bitmap</li>
+</ul>
+</li>
+<li><code>ResourceTranscoder&lt;Z, R&gt;</code>，转换器，负责把解码出来的 Bitmap 转为 ImageView 需要的 Drawable
+<ul>
+<li>同样是 接口类，Bitmap 转 Drawable 对应的转换器是 BitmapDrawableTranscoder</li>
+</ul>
+</li>
+<li><code>DecodePath&lt;DataType, ResourceType, Transcode&gt;</code>，持有多个 ResourceDecoder 和 一个 ResourceTranscoder
+<ul>
+<li>职责是遍历所有的 Decoder ，找出一个能把源数据解码成 ResourceTranscoder 需要的 ResourceType 的 Decoder，然后调用它</li>
+</ul>
+</li>
+<li>LoadPath 负责协调整个解码流程，内部的成员变量 <code>decodePaths</code>，包含了若干个 DecodePath
+<ul>
+<li>和楼上类似，遍历所有的 DecodePath，直到找到能把图片源数据转为目标类型的 DecodePath，可以理解成 <strong>选择器</strong> 的角色</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>以下基于 StreamBitmapDecoder 解码器，BitmapDrawableTranscoder 转换器，来介绍解码转换的流程</p>
+<h3 id="1-解码-decoding">1. 解码 (Decoding)</h3>
+<p>解码的调用链路比较长，中间要横跨好几个类，我们忽略 LoadPath、DecodePath 里的代码逻辑，直接来看 StreamBitmapDecoder 解码器的工作</p>
+<pre><code class="language-java">class StreamBitmapDecoder {
+    private final Downsampler downsampler;
+    private final LruArrayPool byteArrayPool;
+
+    public Resource&lt;Bitmap&gt; decode(InputStream source, int width, int height, Options options){
+        RecyclableBufferedInputStream bufferedStream = new RecyclableBufferedInputStream(source, byteArrayPool);
+        return downsampler.decode(bufferedStream, width, height, options);
+    }
+}
+</code></pre>
+<p>StreamBitmapDecoder 类有个成员变量 <code>byteArrayPool</code></p>
+<p>我们在初始化 Glide 有提到过，它负责复用 byte 数组，同样是 LRU 的设计，是典型的 空间换时间 策略</p>
+<p><code>decode()</code> 把解码工作委托给了 Downsampler，继续向下跟</p>
+<pre><code class="language-java">class Downsampler {
+    
+    // 简化版
+    Resource&lt;Bitmap&gt; decode(imageReader, int requestedWidth, int requestedHeight, Options options, callbacks){
+        // 计算采样率和目标密度
+        calculateScaling(imageType, imageReader, sourceWidth, sourceHeight, targetWidth, targetHeight, options);
+        // Bitmap.Config
+        calculateConfig(imageReader, decodeFormat, options, targetWidth, targetHeight);
+        // Android 4.4 及以上，Bitmap 才支持复用，即增加 inBitmap 属性
+        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.KITKAT) {
+            options.inBitmap = bitmapPool.getDirty(targetWidth, targetHeight);
+        }
+        // 解码成 bitmap 并返回
+        return decodeStream(imageReader, bitmapFactoryOptions, callbacks, bitmapPool);
+    }
+
+}
+</code></pre>
+<p><code>Downsample#decode()</code> 把整个解码过程分为下面几步执行：</p>
+<ol>
+<li>设置 <code>BitmapFactory#Options</code> 的 <code>inJustDecodeBounds</code> 属性为 true，表示 <strong>只读取图片文件的头信息，图片的宽度、高度和 MIME 类型</strong>
+<ul>
+<li>这一步的目的是，拿到图片的 原始尺寸 和已知的 ImageView 尺寸作对比，计算出一个合适的 <code>inSampleSize</code> 采样率</li>
+<li>让最终 Bitmap 的尺寸，尽可能接近 ImageView 大小，避免大图配小 View 的情况，节约内存空间</li>
+</ul>
+</li>
+<li>计算合理的 Bitmap 的 Config
+<ul>
+<li>Glide 会根据 DecodeFormat 和图片是否包含 <code>Alpha</code> 通道，来决定最终解码出来的 Bitmap 的颜色配置使用 888 还是 565</li>
+<li>在 Android 8.0 及以上设备上，Glide 还会根据 <code>ALLOW_HARDWARE_CONFIG</code> 选项尝试使用 <code>Bitmap.Config.HARDWARE</code> 的功能</li>
+<li>Android 官网对 <code>HARDWARE</code> 的介绍是 “<strong>启用此功能可避免重复位图，否则位图会同时位于显存和匿名内存中</strong>”，简单来说，<code>HARDWARE</code> 配置会尝试把 Bitmap 放到 GPU 的显存中，减少主存消耗</li>
+</ul>
+</li>
+<li>尝试从 BitmapPool 中获取一个尺寸和配置合适的可复用 Bitmap</li>
+<li>所有配置完成，最后调用到 Android 原生的 <code>BitmapFactory.decodeStream()</code> 方法
+<ul>
+<li>BitmapFactory 根据入参的 <code>inSampleSize</code>、<code>inBitmap</code>、<code>inPreferredConfig</code> 等选项，从 InputStream 中读取数据并解码成一个 Bitmap 对象并返回</li>
+</ul>
+</li>
+</ol>
+<h3 id="2-裁剪和转换-transformation">2. 裁剪和转换 (Transformation)</h3>
+<p>Bitmap 解码完成以后，Bitmap 对象会经过一系列的回调，最终到达 <code>DecodeJob#onResourceDecoded()</code> 方法</p>
+<p>这里是 Transformation 实际执行的地方</p>
+<p>我们平时指定的 <strong>居中裁剪、圆角、高斯模糊</strong> 等一系列的 转换 都会在这里完成</p>
+<pre><code class="language-java">class DecodeJob {
+
+    &lt;Z&gt; Resource&lt;Z&gt; onResourceDecoded(DataSource dataSource, Resource&lt;Z&gt; decoded) {
+        // 获取解码后的原始资源类型，我们这里是 Bitmap.class）
+        Class&lt;Z&gt; resourceSubClass = (Class&lt;Z&gt;) decoded.get().getClass();
+
+        Transformation&lt;Z&gt; appliedTransformation = null;
+
+        // 如果是从 RESOURCE_DISK_CACHE 读取，说明之前已经 Transform 过才保存到磁盘的
+        if (dataSource != DataSource.RESOURCE_DISK_CACHE) {
+            // 读取开发者配置的 Transformation 集合实例 (例如 CenterCrop 实例)
+            appliedTransformation = decodeHelper.getTransformation(resourceSubClass);
+            // 这一行就是实际执行裁剪、圆角、高斯模糊等像素操作的地方。
+            appliedTransformation.transform(glideContext, decoded, width, height);
+        }
+        return result;
+    }
+}
+</code></pre>
+<p><code>DecodeJob#onResourceDecoded()</code> 方法中，<strong>如果这个 Bitmap 不是从 <code>RESOURCE_DISK_CACHE</code> 加载的，那可以应用 Transformation 效果，否则，说明这个 Bitmap 在缓存之前，已经应用过 Transformation 效果了，再次取出时就不需要二次处理了</strong></p>
+<h3 id="3-转换包装-transcoding">3. 转换包装 (Transcoding)</h3>
+<p>Bitmap 经过 Transformation 处理后，如果最终的目标类型不是 Bitmap 类型，那么就需要进行类型转换</p>
+<p>加载网络图片 <code>into</code> 到 ImageView 一般需要转为 <code>Drawable</code></p>
+<pre><code class="language-java">class BitmapDrawableTranscoder implements ResourceTranscoder&lt;Bitmap, BitmapDrawable&gt; {
+  private final Resources resources;
+
+  public Resource&lt;BitmapDrawable&gt; transcode(Resource&lt;Bitmap&gt; toTranscode, Options options) {
+    return new BitmapDrawable(resources);
+  }
+}
+</code></pre>
+<p><code>BitmapDrawableTranscoder#transcode()</code> 的内部工作非常简单，创建一个 BitmapDrawable 对象返回回去就行了</p>
+<h2 id="回调结果">回调结果</h2>
+<p>BitmapDrawable 对象已经准备就绪，接下来又是层层的回调和转发，大概路径是这样：</p>
+<pre><code>DecodeJob#run() 
+    -&gt; EngineJob#onResourceReady() -&gt; notifyCallbacksOfResult() 
+        -&gt; SingleRequest#onResourceReady()
+            -&gt; ImageViewTarget#onResourceReady()
+</code></pre>
+<p>BitmapDrawable 对象被回调到最初 <code>into()</code> 函数设置的 Target 中</p>
+<pre><code class="language-java">class ImageViewTarget {
+    public void onResourceReady(@NonNull Z resource, @Nullable Transition&lt;? super Z&gt; transition) {
+        view.setImageDrawable(resource);
+    }
+}
+</code></pre>
+<p>ImageViewTarget 拿到 Drawable 对象，又持有 ImageView 对象，接调用 <code>ImageView#setImageDrawable()</code> 函数，把图片塞给 IV 就行了</p>
+<p>等待下一次 vsync 信号到达绘制完图片，用户就可以在手机上看到图片了</p>
+<p>至此，图片加载的流程就全部结束了</p>
+<p>简单总结一下 <code>into()</code> 阶段做的事情</p>
+<ul>
+<li>首先是 <code>into()</code> 启动加载流程，构建 Request 并交给 RequestManager 调度，Request 先确定 ImageView 尺寸后，将任务提交给 Engine。</li>
+<li>然后，Engine 查找内存缓存（<em>ActiveResources → LruResourceCache</em>），都为空则查询磁盘缓存（<em>ResourceCache → DataCache</em>），磁盘缓存也未命中，启动 OkHttpStreamFetcher 在子线程下载图片文件</li>
+<li>数据成功获取后，Downsampler 解码为合适大小和 Config 的 Bitmap 对象，接着，在 <code>DecodeJob#onResourceDecoded()</code> 中，应用 Transformation（<em>裁剪、圆角等</em>）处理 Bitmap，裁剪转换 完成交给 BitmapDrawableTranscoder 将处理后的 Bitmap 包装成BitmapDrawable 类型</li>
+<li>最后，处理好的 BitmapDrawable 资源通过 EngineJob 逐级回调给 Request，直到 <code>ImageViewTarget#onResourceReady()</code> ，调用 <code>setImageDrawable()</code>，将图片显示在 ImageView 上</li>
+</ul>
+<h1 id="四-结语">四、结语</h1>
+<p>本篇文章从 Glide 的 3 步链式调用作为入口，分别介绍了 Glide 如何完成生命周期绑定、构建图片请求策略以及后续的缓存查找、请求、解码的流程</p>
+<p>一路跟下来，发现 Glide 真的是一套非常优秀的图片加载框架，非常的稳定、可靠，这么多年我好像都没有处理过因为 Glide 自身 bug 导致的线上问题</p>
+<p>使用层面上，Glide 开箱即用，3 步链式调用即可自动完成下载、缓存、转换和显示的工作，还自带 Bitmap 优化，内存磁盘缓存和生命周期管理</p>
+<p>代码设计上，Glide 的代码结构也非常清晰，把 Java 面向对象编程 三大特点 表现的淋漓尽致</p>
+<ul>
+<li>良好的封装，不管是加载网图、本地文件还是资源 ID，都只需一行链式调用，你不需要去关心具体怎么去下载、转换、缓存等细节</li>
+<li>继承性，抛开 Glide 内部大量的 继承体系（<em>比如 Request、ViewTarget、ResourceDecoder等</em>）不谈，它还对外提供了比较多的 抽象类和接口 给开发者使用，比如 ModelLoader、ResourceDecoder、Target 等这些都可以自定义，其中最常用的，可能就是继承 AppGlideModule，自定义 内存、磁盘缓存、日志的使用规则了</li>
+<li>多态，比如 <code>with()</code>、<code>load()</code> 这些方法的重载啊，DiskCacheStrategy 和 DownsampleStrategy 这些策略的应用啊，都是多态的体现</li>
+</ul>
+<p>除了这些，Glide 还有随处可见的设计模式，比如 GlideBuilder、RequestBuilder、RequestOptions 的 建造者模式，BitmapPool、ArrayPool 的 享元，ModelLoaderFactory、StreamModelLoaderFactory 的工厂，以及 EngineJob 里面的 观察者模式 等等。</p>
+<p>好了，以上就是本文的全部内容，希望能给大家带来帮助</p>
+<p>如果你在项目中也有使用 Glide，欢迎在评论区分享你的 使用心得 或者 优化小技巧，我们一起交流</p>
+<p>全文完</p>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-os-final/" class="post-title gt-a-link">
+                    MIT6.S081 操作系统实验 - 踩坑总结
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,789 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>MIT6.S081 - Lab11 networking（网络栈） | 易保山</title>
+
+<link rel="shortcut icon" href="https://yibaoshan.github.io//favicon.ico?v=1750130530245">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://yibaoshan.github.io//styles/main.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/9.12.0/languages//dart.min.js"></script>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script> -->
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR8EKM67KY"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-JR8EKM67KY');
+</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+    
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.1/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script> 
+    
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" href="/">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            易保山
+        </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" id="changeNavbar">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+            <div class="nav-item">
+                
+                <a href="/" class="menu gt-a-link">
+                    首页
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/archives" class="menu gt-a-link">
+                    归档
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/tags" class="menu gt-a-link">
+                    标签
+                </a>
+                
+            </div>
+            
+            <div class="nav-item">
+                
+                <a href="/post/about" class="menu gt-a-link">
+                    关于
+                </a>
+                
+            </div>
+            
+        </div>
+        <div style="text-align: center">
+            <form id="gridea-search-form" style="position: relative" data-update="1750130530245"
+                action="/search/">
+                <input class="search-input" autocomplete="off" spellcheck="false" name="q" placeholder="搜索文章" />
+                <i class="fas fa-search gt-c-content-color-first" style="position: absolute; top: 9px; left: 10px;"></i>
+            </form>
+        </div>
+    </div>
+</nav>
+<script>
+    /* 移动端导航栏展开/收起切换 */
+    document.getElementById('changeNavbar').onclick = () => {
+        var element = document.getElementById('navbarSupportedContent');
+        if (element.style.display === 'none' || element.style.display === '') {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    }
+</script>
+
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    MIT6.S081 - Lab11 networking（网络栈）
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2025-04-29 ·
+                    </time>
+                    
+                        <a href="https://yibaoshan.github.io/tag/book-notes/" class="post-tags">
+                            # 读书笔记
+                        </a>
+                    
+                        <a href="https://yibaoshan.github.io/tag/MIT6-S081/" class="post-tags">
+                            # MIT6.S081
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>本篇是 MIT6.S081 2020 操作系统课程 Lab11 的实验笔记，这是课程的最后一个实验了，目标是为 xv6 实现 E1000 网卡驱动的两个核心函数：<strong>发送数据包 <code>e1000_transmit()</code> 和接收数据包 <code>e1000_recv()</code>。</strong></p>
+<blockquote>
+<ul>
+<li>Lab11 地址：https://pdos.csail.mit.edu/6.828/2020/labs/net.html</li>
+<li>我的实验记录：https://github.com/yibaoshan/xv6-labs-2020/tree/net</li>
+</ul>
+</blockquote>
+<p>在开始实验之前，你需要：</p>
+<ol>
+<li>观看 Lecture 21 课程录播视频：<strong>Networking（网络栈）</strong>
+<ul>
+<li>YouTube 原版：https://www.youtube.com/watch?v=Fcjychg4Tvk</li>
+<li>哔哩哔哩中译版：https://www.bilibili.com/video/BV19k4y1C7kA?vd_source=6bce9c6d7d453b39efb8a96f5c8ebb7f&amp;p=20</li>
+<li>中译文字版：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec21-networking-robert</li>
+</ul>
+</li>
+</ol>
+<h1 id="聊聊网络模型">聊聊网络模型</h1>
+<p>本小节是 Lec 21 Networking 的课程笔记。</p>
+<pre><code class="language-c">应用程序 → 协议栈 → 驱动程序 → 网卡硬件 → 物理网络
+</code></pre>
+<h3 id="1-物理层-网卡硬件">1、物理层 网卡硬件</h3>
+<p>位于物理层的网卡工作内容是：</p>
+<ul>
+<li>主要由网卡硬件（内部电路）处理</li>
+<li>包括前导码、SFD 的添加和识别</li>
+<li>信号的编码和解码</li>
+<li>电平转换和时钟同步</li>
+</ul>
+<p><strong>如果不考虑以太网协议啥的，两台有网卡的设备之间，通过一根网线直接连接（类似于两个串口直连），就可以互相传递信号了。</strong></p>
+<h3 id="2-数据链路层-以太网">2、数据链路层 以太网</h3>
+<p>这一层由 OS 和网卡驱动程序支持，它负责：</p>
+<ul>
+<li>初始化网卡硬件</li>
+<li>配置网卡参数（如 MAC 地址、工作模式）</li>
+<li>管理发送和接收队列</li>
+<li>处理中断</li>
+<li>与操作系统的网络协议栈交互</li>
+</ul>
+<p>在两台设备，通过网线相连，能互相发送数据的基础上，增加为，多台设备之间需要互相通信</p>
+<h5 id="idmac-地址">ID：MAC 地址</h5>
+<ol>
+<li><strong>需要为每台设备新增一个唯一 ID，用于身份标识，也就是现在的 MAC 地址。</strong></li>
+<li><strong>需要创建一个规则/协议，用于区分谁和谁通信，现在一般都是 <code>以太网（Ethernet）</code>协议。</strong></li>
+</ol>
+<h5 id="集线器和交换机">集线器和交换机</h5>
+<p>多台设备之间，有好几种连接方式：</p>
+<ol>
+<li><strong>总线型（Bus）</strong>：所有设备共享一条通信线路，结构简单，成本低，但容易发生冲突，一个设备故障可能影响整个网络<pre><code class="language-c">设备A ─┬─ 设备B ─┬─ 设备C
+       │         │
+    共享总线    共享总线
+</code></pre>
+</li>
+<li><strong>星型（Star）</strong>：所有设备连接到中心节点，容易管理，性能好，单台设备挂了不影响其他设备，缺点是如果交换机挂了网络就没了<pre><code class="language-c">设备A ─┐
+设备B ─┼─ 交换机/集线器
+设备C ─┘
+</code></pre>
+</li>
+<li><strong>环形（Ring）</strong>：Token Ring 网络使用这种方式，不考虑<pre><code class="language-c">设备A ──→ 设备B
+↑          ↓
+设备D ←── 设备C
+</code></pre>
+</li>
+</ol>
+<p>现在基本都使用 <strong>星型</strong> 连接方式，多个设备之间，通过网线和 交换机/集线器 连接</p>
+<p>集线器的工作方式是：</p>
+<ol>
+<li><strong>多个设备都需要和 “集线器” 连接</strong></li>
+<li><strong>设备发送数据（目标地址 + 自己是谁 + 数据）给集线器</strong></li>
+<li><strong>集线器相当于村口、学校、商场里面的 “大喇叭”，自己不处理数据，收到以后大喇叭通知给接入它的所有设备，谁谁谁发消息要找谁谁谁，这个数据包你看看你要不要？</strong></li>
+</ol>
+<p>交换机内部会维护一个 MAC 表，记录了每个设备对应的 MAC 地址，当收到数据时，会根据 MAC 地址找到对应的设备，将数据转发给该设备。首次收到数据 MAC 表为空的情况涉及到 IP 地址下一小节介绍。</p>
+<h5 id="以太网帧结构和-mac-地址">以太网帧结构和 MAC 地址</h5>
+<p>因为增加了 唯一 ID ：<strong>MAC 地址</strong> 的关系，所以，在数据链路层及以后的通信，每个数据包都必须要包含 <strong>目标 MAC 地址</strong> 和 <strong>源 MAC 地址</strong>，这样，集线器/交换机 才可以根据 <strong>MAC 地址</strong> 找到对应的设备，将数据转发给该设备。</p>
+<pre><code class="language-c">物理层部分：
++----------+-----+
+| 前导码    | SFD |  8字节
+| 7字节     | 1字节|
++----------+-----+
+
+数据链路层帧：
++----------+----------+----------+------------+--------+
+| 目标MAC  | 源MAC    | 类型/长度 | 数据       | CRC    |
+| 6字节    | 6字节    | 2字节    | 46-1500字节| 4字节  |
++----------+----------+----------+------------+--------+
+</code></pre>
+<ul>
+<li>最小帧：64字节
+<ul>
+<li>MAC地址：12字节</li>
+<li>类型：2字节</li>
+<li>数据：最少46字节</li>
+<li>CRC：4字节</li>
+</ul>
+</li>
+<li>最大帧：1518字节
+<ul>
+<li>MAC地址：12字节</li>
+<li>类型：2字节</li>
+<li>数据：最多1500字节（MTU）</li>
+<li>CRC：4字节</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-c">Frame（信封）：
++-----------------+------------------+------------------+
+| 目标MAC（收件人） | 源MAC（寄件人）   | Packet（信件）    |
++-----------------+------------------+------------------+
+                                    |
+Packet（信件）：                      ↓
+                  +----------------+------------------+
+                  | IP地址（详细地址）|  数据（信件内容）  |
+                  +----------------+------------------+
+</code></pre>
+<h3 id="3-网络层-ip-协议">3、网络层 IP 协议</h3>
+<p>网络层由 OS 提供 IP 协议支持</p>
+<ol>
+<li>两台设备之间，通过网线连接，可以互相通信。</li>
+<li>多台设备之间，通过交换机连接，形成一个局域网，局域网之间可以互相通信。</li>
+</ol>
+<p>现在，在上面这两条的基础上，增加为：<strong>局域网和局域网之间也可以互相通信。</strong></p>
+<pre><code class="language-c">局域网A                    局域网B
+设备1 ──┐               设备3 ──┐
+设备2 ──┼── 交换机A     设备4 ──┼── 交换机B
+        |                      |
+        └──────  ??? ─────────┘
+</code></pre>
+<h5 id="idip-地址">ID：IP 地址</h5>
+<p>局域网之间距离可能很远，相差十万八千里，摆在面前的有两个选择：</p>
+<ol>
+<li><strong>继续用 Mac 地址，另外再创建一个 “全球的交换机中心”，每台交换机都通过一根网线连接在上面，这样交换机之间就可以互相通信了。</strong></li>
+<li><strong>增加额外的设备和协议，创建一种新的寻址方案。</strong></li>
+</ol>
+<h5 id="ip-协议发展史">IP 协议发展史</h5>
+<p>现在的 IP 协议就是这个寻址方案，它为每台设备新增一个 IP 地址，用于寻址（在网络中找到对应的路径）。并且，为这种寻址方案引入了新的设备，路由器</p>
+<pre><code class="language-c">   以太网方案：
+   设备1(MAC1) ── 交换机A ── 交换机B ── 设备2(MAC2)
+   
+   网络层方案：
+   设备1 ── 交换机A ── 路由器A ── 路由器B ── 交换机B ── 设备2
+   192.168.1.2    |            |          |           |    192.168.2.2
+                  |            |          |           |
+            192.168.1.0/24  1.1.1.0/24  1.1.2.0/24   192.168.2.0/24
+</code></pre>
+<p>现在家庭网络的路由器往往身兼数职（<code>调制解调器</code>+<code>路由器</code>+<code>交换机</code>+<code>WiFi</code>），刚创造路由器那会，它的功能是非常单一的：<strong>决定到我这儿的数据包走哪条路，是把数据包转发到另一个网络，还是走 NAT</strong></p>
+<pre><code class="language-c">   [MAC帧]
+      ↓
+   路由器拆开MAC帧
+      ↓
+   查看IP地址
+      ↓
+   选择下一跳
+      ↓
+   封装新的MAC帧
+</code></pre>
+<p>回到以太网协议和 IP 协议的发展历程，事实上，IP 协议 和 以太网协议 的出现也就是前后脚的关系：</p>
+<pre><code class="language-c">1973年 ─── 以太网发明
+    │
+1974年 ─── TCP/IP构思
+    │
+1981年 ─── IPv4规范
+    │
+1983年 ─── IEEE 802.3（以太网标准）
+    │     └── ARPANET切换到TCP/IP
+    │
+1990年 ─── 以太网使用双绞线
+    │
+1995年 ─── 快速以太网
+    │     └── IPv6开始设计
+    │
+1999年 ─── 千兆以太网
+</code></pre>
+<p>73 年出现以太网以后， TCP/IP 紧随其后，在 74 年就提出了 TCP/IP 协议的概念。</p>
+<h5 id="ip-数据包格式">IP 数据包格式</h5>
+<pre><code class="language-c">以太网帧结构：
++----------+----------+----------+------------------------+--------+
+| 目标MAC  | 源MAC    | 类型=0x0800   |     IP数据包        | CRC    |
+| 6字节    | 6字节    | 2字节         |                    | 4字节  |
++----------+----------+-------------+--------------------+--------+
+                                           ↑
+                                           │
+IP 数据包：                                 │
++--------+--------+--------+----------------+
+| IP头   | TTL    | 协议   | 数据           |
++--------+--------+--------+----------------+
+</code></pre>
+<h3 id="4-传输层-tcpudp">4、传输层 TCP/UDP</h3>
+<p>以太网协议 + IP 协议，已经能够保证，在网络上，把数据包发送到哪一台设备，但是我们希望做的更好一些。</p>
+<p>每一个机器都运行了大量需要使用网络的应用，所以，我们需要有一种方式能区分一个 数据包 应该传递给目的主机的哪一个应用程序，而 IP 协议明显不包含这种区分方式。</p>
+<h5 id="idport">ID：Port</h5>
+<p>所以，发明了新的协议来完成了这里的区分工作，其中一个是 TCP，它比较复杂，而另一个是 UDP</p>
+<ol>
+<li>早期阶段（1970年代初）：ARPANET 网络初期，只有简单的主机到主机通信，没有可靠传输机制，应用需要自己处理所有的连接通信问题</li>
+<li>TCP的诞生（1974）：Vint Cerf 和 Bob Kahn 提出 TCP 的概念，最初的 TCP 和 IP 是一体的，目标是解决网络通信的可靠性问题，它包含了：连接管理 、可靠传输 、流量控制</li>
+<li>TCP/IP分离（1978）：TCP 和 IP 被分为独立的协议，原因是有些应用不需要可靠传输以及 分层更清晰、更灵活</li>
+<li>UDP的加入（1980）：UDP 提供简单的不可靠传输服务，它适用于：实时应用 、简单查询响应 、广播/多播</li>
+<li>现代应用，TCP 用于需要可靠传输的场景（如网页、邮件），UDP用于需要快速传输的场景（如视频流、游戏），两种协议互补，满足不同需求</li>
+</ol>
+<p>面试经常会被问到的 HTTP 的三握四挥，指的就是这里的 TCP 协议，HTTP 是建立在 TCP 协议之上的。</p>
+<h5 id="tcp-为什么要三握四挥">TCP 为什么要三握四挥？</h5>
+<p>复习一下三次握手，建立连接的过程</p>
+<pre><code class="language-c">客户端                      服务器
+  │                          │
+  │──── SYN=1, seq=x ───────&gt;│ # 第一次：我想建立连接【确保客户端发送能力】
+  │                          │
+  │&lt;── SYN=1,ACK=x+1,seq=y ──│ # 第二次：好的，我准备好了【确保服务器收发能力】
+  │                          │
+  │──── ACK=y+1 ────────────&gt;│ # 第三次：我也准备好了【确保客户端接收能力】
+  │                          │
+连接建立完成                  连接建立完成
+</code></pre>
+<p>断开连接的四次挥手：</p>
+<pre><code class="language-c">客户端                      服务器
+  │                          │
+  │──── FIN=1, seq=x ───────&gt;│ # 第一次：我想关闭连接【客户端请求关闭】
+  │                          │
+  │&lt;─── ACK=x+1 ────────────│ # 第二次：好的，我知道了【服务器确认，但可能还有数据要发】
+  │                          │
+  │&lt;─── FIN=1, seq=y ───────│ # 第三次：我也想关闭了【服务器发送完毕】
+  │                          │
+  │──── ACK=y+1 ────────────&gt;│ # 第四次：好的，再见【客户端确认】
+  │                          │
+连接关闭                     连接关闭
+</code></pre>
+<p>老八股，<strong>TCP 协议为什么需要三握四挥？</strong></p>
+<ul>
+<li><strong>三握，保证双方的收发能力</strong>
+<ul>
+<li>两次不够，无法确认客户端的接收能力</li>
+<li>四次多余，三次已经确认了双方的收发能力</li>
+</ul>
+</li>
+<li><strong>四挥，确保双方都完成了数据传输</strong>
+<ul>
+<li>三次不够，因为服务器（如果是客户端发起断连请求）可能还有数据要发送</li>
+<li>必须等双方都确认没有数据要发送</li>
+</ul>
+</li>
+<li>总结，为了保证通信的可靠性，三握四挥已经是最少的通信次数了。</li>
+</ul>
+<h5 id="其他知识点补充">其他知识点补充</h5>
+<p>端口（Port）</p>
+<ul>
+<li>用于区分同一主机上的不同应用程序</li>
+<li>16位数字（0-65535）</li>
+<li>知名端口：
+<ul>
+<li>HTTP：80</li>
+<li>HTTPS：443</li>
+<li>FTP：21</li>
+<li>SSH：22</li>
+</ul>
+</li>
+</ul>
+<p>TCP的重要机制，滑动窗口和拥塞控制，忽略</p>
+<p>TCP和UDP的数据包格式，忽略</p>
+<p>加入 TCP/UDP 协议了以后的数据包格式：</p>
+<pre><code class="language-c">以太网帧：
++------+------+----------------------+------+
+| MAC头 | 类型 | IP数据包            | CRC  |
++------+------+----------------------+------+
+                    ↓
+IP数据包：
++--------+----------------------+
+| IP头   | TCP/UDP段           |
++--------+----------------------+
+                    ↓
+TCP/UDP段：
++-------------+----------------+
+| TCP/UDP头   | 应用层数据     |
++-------------+----------------+
+</code></pre>
+<h3 id="5-应用层-http">5、应用层 HTTP</h3>
+<p>常见的一些协议，待会会一一介绍：</p>
+<ul>
+<li>HTTP/HTTPS（网页）</li>
+<li>FTP（文件传输）</li>
+<li>DNS（域名解析）</li>
+<li>SSH（安全远程登录）</li>
+</ul>
+<h5 id="http">HTTP</h5>
+<p>HTTP 基于 TCP 实现，所以，一次完整的 HTTP 请求-响应，<strong>先是三次 TCP 握手的通信创建连接，然后是中间 N 次的 TCP 传输 HTTP 的报文数据，最后是四次 TCP 通信挥手挂断。</strong></p>
+<pre><code class="language-c">应用层：HTTP
+    ↓
+传输层：TCP
+    ↓
+网络层：IP
+</code></pre>
+<h5 id="https">HTTPS</h5>
+<p>HTTPS 是 HTTP 的安全版本，在三次握手之后，会增加一次 SSL/TLS 握手，然后中间是 N 次的 TCP 通信传输数据，最后还是四次挥手断联。</p>
+<pre><code class="language-c">客户端                      服务器
+  │                          │
+  │── TCP握手 ─────────────&gt;│
+  │                          │
+  │── SSL/TLS握手 ─────────&gt;│ # 协商加密参数
+  │                          │
+  │── 加密的HTTP数据 ───────&gt;│ # 安全通信
+</code></pre>
+<p>中间的通信会变为：</p>
+<pre><code class="language-c">客户端                      服务器
+  │                          │
+  │── 支持的加密算法列表 ───&gt;│ # 协商使用什么加密方式
+  │&lt;── 选择的加密算法 ──────│
+  │                          │
+  │── 交换密钥 ────────────&gt;│ # 生成通信用的密钥
+  │&lt;── 交换密钥 ────────────│
+</code></pre>
+<p>因为首次通信的秘钥交换依旧是明文，SSL/TLS使用非对称加密（公钥加密）来解决首次密钥交换的安全问题：</p>
+<pre><code class="language-c">服务器：
+- 私钥（自己保存），私钥才能解密
+- 公钥（可以公开），只能用来加密
+
+客户端                      服务器
+  │                          │
+  │&lt;── 公钥 ────────────────│ # 服务器发送公钥
+  │                          │
+  │── 用公钥加密的密钥 ────&gt;│ # 客户端生成会话密钥
+  │                          │ # 服务器用私钥解密
+</code></pre>
+<p>也就是说，<strong>公钥私钥都是由服务器保存，三次握手以后进入 SSL/TLS 握手阶段，服务器会将公钥信息发给客户端，客户端使用公钥进行加密，数据到达服务端以后，服务端再用私钥解密</strong></p>
+<h5 id="ftp">FTP</h5>
+<p>FTP 是一个经典的文件传输协议，同样基于 TCP 协议二次开发，但是有安全问题，它的发展历史</p>
+<ul>
+<li>1971年：首个FTP规范</li>
+<li>1980年：TCP/IP版本的FTP</li>
+<li>1985年：添加了认证机制</li>
+<li>现在：逐渐被SFTP、FTPS等安全版本替代</li>
+</ul>
+<pre><code class="language-c">客户端 ←───── 控制连接（21端口）────→ 服务器
+      ←───── 数据连接（20端口）────→
+</code></pre>
+<p>emmm，细节不展开了，不是很感兴趣，忽略。</p>
+<h5 id="dns">DNS</h5>
+<p>域名解析协议，负责将域名解析为 IP 地址，然后客户端就可以通过 IP 地址访问服务器了。</p>
+<p>DNS 跟楼上的 HTTP/FTP 不同，它同时使用 TCP 和 UDP 实现，主要使用 UDP，除非响应超过 512 字节，才会使用 TCP</p>
+<pre><code class="language-c">客户端:54321 → 服务器:53
+&quot;查询 yibs.space 的IP&quot;
+
+服务器:53 → 客户端:54321
+&quot;IP是 x.x.x.x&quot;
+</code></pre>
+<p>如果响应超过了 512 字节，那么 DNS 服务器会返回一个错误码，然后客户端会重新请求，但是这次使用 TCP</p>
+<pre><code class="language-c"># 先用UDP
+客户端:54321 → 服务器:53
+&quot;查询所有 yibs.space 记录&quot;
+
+服务器:53 → 客户端:54321
+&quot;响应太大，请用TCP&quot;
+
+# 切换到TCP
+[TCP三次握手]
+客户端:54322 → 服务器:53
+&quot;查询所有 yibs.space 记录&quot;
+</code></pre>
+<h5 id="ssh">SSH</h5>
+<p>SSH 是一个安全远程登录协议，诞生于 1995 年，使用 TCP 实现，默认端口：22</p>
+<p>使用方式：</p>
+<pre><code class="language-c"># 生成 RSA 密钥对
+ssh-keygen -t rsa -b 4096
+
+# 服务器配置 /etc/ssh/sshd_config
+Port 22
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+# 客户端配置 ~/.ssh/config
+Host myserver
+    HostName 192.168.1.100
+    User admin
+    Port 22
+    IdentityFile ~/.ssh/id_rsa
+</code></pre>
+<h1 id="networking-hard">Networking (hard)</h1>
+<p>Your job is to complete e1000_transmit() and e1000_recv(), both in kernel/e1000.c, so that the driver can transmit and receive packets. You are done when make grade says your solution passes all the tests.</p>
+<p><strong>你的任务是在 <code>e1000_transmit()</code> 和 <code>e1000_recv()</code> 中完成 kernel/e1000.c 中的代码，使驱动程序能够发送和接收数据包。</strong></p>
+<h3 id="一些提示">一些提示</h3>
+<p>以下来自 Lab 11 的提示（机翻）</p>
+<p>Start by adding print statements to e1000_transmit() and e1000_recv(), and running make server and (in xv6) nettests. You should see from your print statements that nettests generates a call to e1000_transmit.</p>
+<p><em>从 <code>e1000_transmit()</code> 和 <code>e1000_recv()</code> 中添加打印语句，并运行 <code>make server</code> 和（在 xv6 中） <code>nettests</code> 。你应该从打印语句中看到 <code>nettests</code> 生成了对 <code>e1000_transmit</code> 的调用。</em></p>
+<p>Some hints for implementing e1000_transmit:</p>
+<p><em>实现 <code>e1000_transmit()</code> 的一些提示：</em></p>
+<ul>
+<li>First ask the E1000 for the TX ring index at which it's expecting the next packet, by reading the E1000_TDT control register.<br>
+<em>首先通过读取 <code>E1000_TDT</code> 控制寄存器，询问 <code>E1000</code> 它期望的下一个数据包所在的 <code>TX 环索引</code>。</em></li>
+<li>Then check if the the ring is overflowing. If E1000_TXD_STAT_DD is not set in the descriptor indexed by E1000_TDT, the E1000 hasn't finished the corresponding previous transmission request, so return an error.<br>
+<em>然后检查是否出现了 环溢出。如果在由 <code>E1000_TD</code>T 索引的描述符中未设置 <code>E1000_TXD_STAT_DD</code> ，则 <code>E1000</code> 尚未完成相应的先前传输请求，因此，返回错误。</em></li>
+<li>Otherwise, use mbuffree() to free the last mbuf that was transmitted from that descriptor (if there was one).<br>
+<em>否则，使用 <code>mbuffree()</code> 释放最后一个从该描述符传输的 <code>mbuf</code>（如果有的话）。</em></li>
+<li>Then fill in the descriptor. m-&gt;head points to the packet's content in memory, and m-&gt;len is the packet length. Set the necessary cmd flags (look at Section 3.3 in the E1000 manual) and stash away a pointer to the mbuf for later freeing.<br>
+<em>然后填充描述符。 <code>m-&gt;head</code> 指向内存中的数据包内容， <code>m-&gt;len</code> 是数据包长度。设置必要的 <code>cmd</code> 标志（参见 E1000 手册中的第 3.3 节），并保存一个 <code>mbuf</code> 指针以供以后释放。</em></li>
+<li>Finally, update the ring position by adding one to E1000_TDT modulo TX_RING_SIZE.<br>
+<em>最后，通过将 <code>E1000_TDT</code> 加 1 并对 <code>TX_RING_SIZE</code> 取模来更新环位置。</em></li>
+<li>If e1000_transmit() added the mbuf successfully to the ring, return 0. On failure (e.g., there is no descriptor available to transmit the mbuf), return -1 so that the caller knows to free the mbuf.<br>
+<em>如果 <code>e1000_transmit()</code> 成功将 <code>mbuf</code> 添加到环中，则返回 0。如果失败（例如，没有可用的描述符来传输 <code>mbuf</code>），则返回-1，以便调用者知道需要释放 <code>mbuf</code>。</em></li>
+</ul>
+<p>Some hints for implementing e1000_recv:</p>
+<p><em>实现 <code>e1000_recv()</code> 的一些提示：</em></p>
+<ul>
+<li>First ask the E1000 for the ring index at which the next waiting received packet (if any) is located, by fetching the E1000_RDT control register and adding one modulo RX_RING_SIZE.<br>
+<em>首先通过获取 <code>E1000_RDT</code> 控制寄存器并加一（% <code>RX_RING_SIZE</code> ）来询问 <code>E1000</code> 下一个等待接收的包（如果有）位于环中的索引位置。</em></li>
+<li>Then check if a new packet is available by checking for the E1000_RXD_STAT_DD bit in the status portion of the descriptor. If not, stop.<br>
+<em>然后通过检查描述符的 <code>status</code> 部分中的 <code>E1000_RXD_STAT_DD</code> 位来检查是否有新包可用。如果没有，则停止。</em></li>
+<li>Otherwise, update the mbuf's m-&gt;len to the length reported in the descriptor. Deliver the mbuf to the network stack using net_rx().<br>
+<em>否则，将 <code>mbuf</code> 的 <code>m-&gt;len</code> 更新为描述符中报告的长度。使用 <code>net_rx()</code> 将 <code>mbuf</code> 传递给网络堆栈。</em></li>
+<li>Then allocate a new mbuf using mbufalloc() to replace the one just given to net_rx(). Program its data pointer (m-&gt;head) into the descriptor. Clear the descriptor's status bits to zero.<br>
+<em>然后使用 <code>mbufalloc()</code> 为刚刚传递给 <code>net_rx()</code> 的 <code>mbuf</code> 分配一个新的 <code>mbuf</code>。将数据指针（ <code>m-&gt;head</code> ）编程描述符。清除描述符的状态位为零。</em></li>
+<li>Finally, update the E1000_RDT register to be the index of the last ring descriptor processed.<br>
+<em>最后，将 <code>E1000_RDT</code> 寄存器更新为处理的最后一个环描述符的索引。</em></li>
+<li>e1000_init() initializes the RX ring with mbufs, and you'll want to look at how it does that and perhaps borrow code.<br>
+<em><code>e1000_init()</code> 用 <code>mbuf</code> 初始化 <code>RX</code> 环，你可能需要查看它是如何做到这一点的，并且可以借用一些代码。</em></li>
+<li>At some point the total number of packets that have ever arrived will exceed the ring size (16); make sure your code can handle that.<br>
+<em>某个时刻，总共到达的包的数量将超过环的大小（16）；确保你的代码能够处理这种情况。</em></li>
+</ul>
+<p>You'll need locks to cope with the possibility that xv6 might use the E1000 from more than one process, or might be using the E1000 in a kernel thread when an interrupt arrives.</p>
+<p><em>你需要锁来应对 xv6 可能从多个进程使用 E1000，或者可能在中断到达时在内核线程中使用 E1000 的情况。</em></p>
+<h3 id="实现-e1000_transmit">实现 e1000_transmit()</h3>
+<p>Lab 11 实验本身不是很难，按照提示一步步实现 <code>e1000_transmit()</code> 和 <code>e1000_recv()</code> 函数功能即可。</p>
+<pre><code class="language-c">kernel/e1000.c
+int
+e1000_transmit(struct mbuf *m)
+{
+  // 并发安全
+  acquire(&amp;e1000_lock);
+  
+  // 从网卡寄存器中，获取下一个可用的发送描述符索引
+  uint32 tdt = regs[E1000_TDT];
+  
+  // 检查这个 buf 是否是空闲可用的
+  if(!(tx_ring[tdt].status &amp; E1000_TXD_STAT_DD)){
+    release(&amp;e1000_lock);
+    return -1;  // 环形缓冲区已满
+  }
+  
+  // 尝试释放上一个已发送完数据但未释放的 mbuf，如果存在的话
+  if(tx_mbufs[tdt]){
+    mbuffree(tx_mbufs[tdt]);
+  }
+  
+  // 一些赋值操作，设置发送描述符，网卡将通过 DMA 设备直接从这个地址读取数据
+  tx_ring[tdt].addr = (uint64)m-&gt;head;
+  tx_ring[tdt].length = m-&gt;len;
+  tx_ring[tdt].cmd = E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP;
+  tx_ring[tdt].status = 0;
+  
+  // 保存 mbuf 的指针，等网卡发送完后释放内存
+  tx_mbufs[tdt] = m;
+  
+  // 更新网卡的发送队列指针，通知网卡有新的数据包要发送
+  regs[E1000_TDT] = (tdt + 1) % TX_RING_SIZE;
+  
+  release(&amp;e1000_lock);
+  return 0;
+}
+</code></pre>
+<p>e1000_transmit() 里面看起来没有和网卡驱动通信，这是因为用了 内存映射寄存器(MMIO) 技术，把硬件的寄存器映射到内存了，这样，读写内存就相当于和硬件通信了。</p>
+<p>网卡驱动程序通过 regs 数组，来访问 E1000 网卡硬件的控制寄存器（把硬件寄存器映射到内存）</p>
+<pre><code class="language-c">// regs 是一个指向内存的指针，但实际上访问的是网卡的寄存器
+uint32 tdt = regs[E1000_TDT];
+</code></pre>
+<p>比如这段代码，regs[E1000_TDT] 这行代码看起来像是在访问普通的内存数组，但实际上这里的 regs 指向的是映射到内存空间的网卡硬件寄存器。</p>
+<p>读操作会直接从网卡硬件取值</p>
+<pre><code class="language-c">// 更新网卡的发送队列指针，通知网卡有新的数据包要发送
+regs[E1000_TDT] = (tdt + 1) % TX_RING_SIZE;
+</code></pre>
+<p>写操作也会直接写入到网卡硬件，上面这行就是更新网卡硬件的状态，告诉网卡有新的数据包需要发送。</p>
+<h3 id="实现-e1000_recv">实现 e1000_recv()</h3>
+<pre><code class="language-c">kernel/e1000.c
+static void
+e1000_recv(void)
+{
+  // 并发安全
+  acquire(&amp;e1000_lock);
+  
+  while(1){
+    // 计算下一个接收描述符索引
+    uint32 rdt = (regs[E1000_RDT] + 1) % RX_RING_SIZE;
+    
+    // 检查是否全部读完了，rx_ring 由 DMA 更新
+    // E1000_RXD_STAT_DD 表示网卡是否已经通过 DMA 写入了新数据
+    if(!(rx_ring[rdt].status &amp; E1000_RXD_STAT_DD)){
+      break;
+    }
+    
+    // 读接收到的数据包内容
+    struct mbuf *m = rx_mbufs[rdt];
+    m-&gt;len = rx_ring[rdt].length;
+    
+    // 分配新的 mbuf，准备下一次接受
+    struct mbuf *new_mbuf = mbufalloc(0);
+    if(!new_mbuf){
+      panic(&quot;e1000_recv&quot;);
+    }
+    
+    // 更新接收描述符
+    rx_mbufs[rdt] = new_mbuf;
+    rx_ring[rdt].addr = (uint64)new_mbuf-&gt;head;
+    rx_ring[rdt].status = 0; // 清除状态位，准备接收新的数据包
+    
+    // 通知网卡有空闲的接收描述符可以用了
+    regs[E1000_RDT] = rdt;
+    
+    // 传递数据包给网络栈
+    release(&amp;e1000_lock);
+    net_rx(m);
+    acquire(&amp;e1000_lock);
+  }
+  
+  release(&amp;e1000_lock);
+}
+</code></pre>
+<p>基本上都是按照提示来实现的，每行代码都增加了注释。</p>
+<h3 id="更换-dns-地址">更换 DNS 地址</h3>
+<p>执行 <code>nettests</code> 测试，会发现前面几个测试用例都通过了，执行到 starting DNS 时卡住了，半天没个结果，也没有报错信息。</p>
+<p>打开 nettests.c 查看 DNS() 函数的测试用例，发现 DNS 测试的地址是 Google 的 8.8.8.8，我本地网络可能无法访问，所以这里换成了阿里的 DNS 服务器地址</p>
+<pre><code class="language-c">user/nettests.c
+static void
+dns()
+{
+  ...
+  memset(obuf, 0, N);
+  memset(ibuf, 0, N);
+  
+//  // 8.8.8.8: google's name server
+//  dst = (8 &lt;&lt; 24) | (8 &lt;&lt; 16) | (8 &lt;&lt; 8) | (8 &lt;&lt; 0);
+
+  // 223.5.5.5: 阿里的 name server
+  dst = (223 &lt;&lt; 24) | (5 &lt;&lt; 16) | (5 &lt;&lt; 8) | (5 &lt;&lt; 0);
+
+  if((fd = connect(dst, 10000, 53)) &lt; 0){
+    fprintf(2, &quot;ping: connect() failed\n&quot;);
+    exit(1);
+  }
+  ...
+}
+</code></pre>
+<p>再次运行 <code>nettests</code> 测试程序</p>
+<figure data-type="image" tabindex="1"><img src="https://yibaoshan.github.io//post-images/1745928378061.png" alt="" loading="lazy"></figure>
+<p>测试通过，完整代码在：https://github.com/yibaoshan/xv6-labs-2020/commit/496ed823f685bf97712e9417e88df2c86d66961a</p>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>CS自学指南：https://csdiy.wiki/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/MIT6.S081/</li>
+</ul>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://yibaoshan.github.io/post/mit6s081-lab10-mmap/" class="post-title gt-a-link">
+                    MIT6.S081 - Lab10 mmap（文件&amp;内存映射）
+                </a>
+            </div>
+        
+
+        
+
+        
+            
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+<script>
+    // md5.min.js
+    !function(n){
+        "use strict";
+        function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}
+        function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}
+        function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}
+        function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}
+        function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}
+        function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}
+        function i(n,t){var r,e,o,u,c;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;var f=1732584193,i=-271733879,a=-1732584194,h=271733878;for(r=0;r<n.length;r+=16)f=l(e=f,o=i,u=a,c=h,n[r],7,-680876936),h=l(h,f,i,a,n[r+1],12,-389564586),a=l(a,h,f,i,n[r+2],17,606105819),i=l(i,a,h,f,n[r+3],22,-1044525330),f=l(f,i,a,h,n[r+4],7,-176418897),h=l(h,f,i,a,n[r+5],12,1200080426),a=l(a,h,f,i,n[r+6],17,-1473231341),i=l(i,a,h,f,n[r+7],22,-45705983),f=l(f,i,a,h,n[r+8],7,1770035416),h=l(h,f,i,a,n[r+9],12,-1958414417),a=l(a,h,f,i,n[r+10],17,-42063),i=l(i,a,h,f,n[r+11],22,-1990404162),f=l(f,i,a,h,n[r+12],7,1804603682),h=l(h,f,i,a,n[r+13],12,-40341101),a=l(a,h,f,i,n[r+14],17,-1502002290),f=v(f,i=l(i,a,h,f,n[r+15],22,1236535329),a,h,n[r+1],5,-165796510),h=v(h,f,i,a,n[r+6],9,-1069501632),a=v(a,h,f,i,n[r+11],14,643717713),i=v(i,a,h,f,n[r],20,-373897302),f=v(f,i,a,h,n[r+5],5,-701558691),h=v(h,f,i,a,n[r+10],9,38016083),a=v(a,h,f,i,n[r+15],14,-660478335),i=v(i,a,h,f,n[r+4],20,-405537848),f=v(f,i,a,h,n[r+9],5,568446438),h=v(h,f,i,a,n[r+14],9,-1019803690),a=v(a,h,f,i,n[r+3],14,-187363961),i=v(i,a,h,f,n[r+8],20,1163531501),f=v(f,i,a,h,n[r+13],5,-1444681467),h=v(h,f,i,a,n[r+2],9,-51403784),a=v(a,h,f,i,n[r+7],14,1735328473),f=g(f,i=v(i,a,h,f,n[r+12],20,-1926607734),a,h,n[r+5],4,-378558),h=g(h,f,i,a,n[r+8],11,-2022574463),a=g(a,h,f,i,n[r+11],16,1839030562),i=g(i,a,h,f,n[r+14],23,-35309556),f=g(f,i,a,h,n[r+1],4,-1530992060),h=g(h,f,i,a,n[r+4],11,1272893353),a=g(a,h,f,i,n[r+7],16,-155497632),i=g(i,a,h,f,n[r+10],23,-1094730640),f=g(f,i,a,h,n[r+13],4,681279174),h=g(h,f,i,a,n[r],11,-358537222),a=g(a,h,f,i,n[r+3],16,-722521979),i=g(i,a,h,f,n[r+6],23,76029189),f=g(f,i,a,h,n[r+9],4,-640364487),h=g(h,f,i,a,n[r+12],11,-421815835),a=g(a,h,f,i,n[r+15],16,530742520),f=m(f,i=g(i,a,h,f,n[r+2],23,-995338651),a,h,n[r],6,-198630844),h=m(h,f,i,a,n[r+7],10,1126891415),a=m(a,h,f,i,n[r+14],15,-1416354905),i=m(i,a,h,f,n[r+5],21,-57434055),f=m(f,i,a,h,n[r+12],6,1700485571),h=m(h,f,i,a,n[r+3],10,-1894986606),a=m(a,h,f,i,n[r+10],15,-1051523),i=m(i,a,h,f,n[r+1],21,-2054922799),f=m(f,i,a,h,n[r+8],6,1873313359),h=m(h,f,i,a,n[r+15],10,-30611744),a=m(a,h,f,i,n[r+6],15,-1560198380),i=m(i,a,h,f,n[r+13],21,1309151649),f=m(f,i,a,h,n[r+4],6,-145523070),h=m(h,f,i,a,n[r+11],10,-1120210379),a=m(a,h,f,i,n[r+2],15,718787259),i=m(i,a,h,f,n[r+9],21,-343485551),f=d(f,e),i=d(i,o),a=d(a,u),h=d(h,c);return[f,i,a,h]}
+        function a(n){var t,r="",e=32*n.length;for(t=0;t<e;t+=8)r+=String.fromCharCode(n[t>>5]>>>t%32&255);return r}
+        function h(n){var t,r=[];for(r[(n.length>>2)-1]=void 0,t=0;t<r.length;t+=1)r[t]=0;var e=8*n.length;for(t=0;t<e;t+=8)r[t>>5]|=(255&n.charCodeAt(t/8))<<t%32;return r}
+        function e(n){var t,r,e="0123456789abcdef",o="";for(r=0;r<n.length;r+=1)t=n.charCodeAt(r),o+=e.charAt(t>>>4&15)+e.charAt(15&t);return o}
+        function r(n){return unescape(encodeURIComponent(n))}
+        function o(n){return a(i(h(t=r(n)),8*t.length));var t}
+        function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}
+        function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+        "function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t;
+    }(this);
+</script>
+
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'Ov23libaVcxuWnzuTvLX',
+    clientSecret: 'b59316dc6b1b78c814fd5619ee67d44a6dba380b',
+    repo: 'yibaoshan',
+    owner: 'yibaoshan',
+    admin: ['yibaoshan'],
+    id: md5(location.pathname),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false       // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first"></div>
+    <div class="social-container">
+        
+            
+                <a href="https://github.com/yibaoshan" target="_blank">
+                    <i class="fab fa-github gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+            
+                <a href="https://www.zhihu.com/people/yibaoshan?theme=dark" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        
+    </div>
+    <div>
+        Theme <a href="https://github.com/imhanjie/gridea-theme-pure" target="_blank">Pure</a>, Powered by <a
+                href="https://gridea.dev" target="_blank">Gridea</a> | <a href="https://yibaoshan.github.io//atom.xml" target="_blank">RSS</a>
+    </div>
+</div>
+
+<script>
+  hljs.highlightAll()
+</script>
+
+    </div>
+</div>
+</body>
+</html>
