@@ -142,32 +142,12 @@
             color: #667eea;
         }
 
-        .qrcode-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .qrcode-canvas {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .qrcode-tip {
-            font-size: 14px;
-            color: #999;
-            line-height: 1.5;
-        }
-
         .arrow-guide {
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             pointer-events: none;
             z-index: 1000;
         }
@@ -182,11 +162,13 @@
             position: absolute;
             top: 50%;
             left: 0;
-            width: 60px;
-            height: 3px;
+            width: 70px;
+            height: 4px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             transform-origin: left center;
+            transform: translateY(-50%);
             animation: arrowPulse 1.5s ease-in-out infinite;
+            border-radius: 2px;
         }
 
         .arrow-head {
@@ -195,9 +177,9 @@
             right: 0;
             width: 0;
             height: 0;
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-            border-left: 12px solid #764ba2;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 15px solid #764ba2;
             transform: translateY(-50%);
             animation: arrowPulse 1.5s ease-in-out infinite;
         }
@@ -217,8 +199,8 @@
             position: absolute;
             top: 0;
             right: 0;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
             animation: pointPulse 1.5s ease-in-out infinite;
@@ -234,6 +216,26 @@
                 transform: scale(1.2);
                 opacity: 0.8;
             }
+        }
+
+        .qrcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .qrcode-canvas {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .qrcode-tip {
+            font-size: 14px;
+            color: #999;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -312,35 +314,6 @@
                 return urlParams.get(name);
             }
 
-            // 获取标题，如果为空则使用默认值
-            function getTitle() {
-                const title = getUrlParam('title');
-                return title || '应用下载';
-            }
-
-            // 设置页面标题
-            function setPageTitle() {
-                const title = getTitle();
-                document.title = title;
-            }
-
-            // 设置所有容器标题
-            function setContainerTitles() {
-                const title = getTitle();
-                const titleElements = [
-                    document.getElementById('wechatGuideTitle'),
-                    document.getElementById('loadingTitle'),
-                    document.getElementById('buttonTitle'),
-                    document.getElementById('qrcodeTitle')
-                ];
-                
-                titleElements.forEach(function(el) {
-                    if (el) {
-                        el.textContent = title;
-                    }
-                });
-            }
-
             // 检测是否在微信环境
             function isWeChat() {
                 const ua = navigator.userAgent.toLowerCase();
@@ -368,6 +341,35 @@
             // 检测是否为移动设备（Android或iOS）
             function isMobileDevice() {
                 return isAndroid() || isIOS();
+            }
+
+            // 获取标题，如果为空则使用默认值
+            function getTitle() {
+                const title = getUrlParam('title');
+                return title || '应用下载';
+            }
+
+            // 设置页面标题
+            function setPageTitle() {
+                const title = getTitle();
+                document.title = title;
+            }
+
+            // 设置所有容器标题
+            function setContainerTitles() {
+                const title = getTitle();
+                const titleElements = [
+                    document.getElementById('wechatGuideTitle'),
+                    document.getElementById('loadingTitle'),
+                    document.getElementById('buttonTitle'),
+                    document.getElementById('qrcodeTitle')
+                ];
+                
+                titleElements.forEach(function(el) {
+                    if (el) {
+                        el.textContent = title;
+                    }
+                });
             }
 
             // 获取应用商店链接
@@ -434,7 +436,7 @@
                 }
             }
 
-            // QR码生成算法（基于标准QR码规范）
+            // 生成二维码（简化版，使用Canvas绘制）
             function generateQRCode(text, canvas) {
                 const size = 200;
                 const modules = 25; // QR码版本1，25x25模块
@@ -471,9 +473,9 @@
                 }
                 
                 // 绘制定位图案
-                drawFinderPatternMatrix(matrix, 0, 0, size);
-                drawFinderPatternMatrix(matrix, size - 7, 0, size);
-                drawFinderPatternMatrix(matrix, 0, size - 7, size);
+                drawFinderPattern(matrix, 0, 0, size);
+                drawFinderPattern(matrix, size - 7, 0, size);
+                drawFinderPattern(matrix, 0, size - 7, size);
                 
                 // 绘制分隔线
                 for (let i = 0; i < 8; i++) {
@@ -496,8 +498,6 @@
                 for (let i = 8; i < size - 8; i++) {
                     matrix[i][6] = (i % 2 === 0);
                 }
-                
-                // 对齐图案（版本1不需要）
                 
                 // 编码数据
                 const dataBits = encodeQRData(text);
@@ -614,7 +614,7 @@
             }
 
             // 绘制定位图案到矩阵
-            function drawFinderPatternMatrix(matrix, row, col, size) {
+            function drawFinderPattern(matrix, row, col, size) {
                 const pattern = [
                     [1,1,1,1,1,1,1],
                     [1,0,0,0,0,0,1],
