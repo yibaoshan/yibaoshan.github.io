@@ -81,33 +81,67 @@
             display: none;
         }
 
-        /* 微信/QQ 引导提示样式 */
-        .wechat-guide {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 15px;
-            padding: 30px 20px;
-            margin: 20px 0;
+        /* 微信/QQ 引导提示样式 - 参考 download.html */
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
         }
 
-        .wechat-guide-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #856404;
+        .message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .guide-box {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 20px;
         }
 
-        .wechat-guide-text {
-            font-size: 16px;
-            color: #856404;
-            margin-top: 20px;
-            line-height: 1.6;
+        .guide-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
         }
 
-        .wechat-guide-arrow {
-            font-size: 48px;
-            margin: 20px 0;
-            color: #856404;
+        .guide-steps {
+            text-align: left;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+            list-style: none;
+        }
+
+        .guide-steps li {
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+
+        .guide-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .arrow {
+            display: inline-block;
+            margin: 0 5px;
+            font-size: 18px;
+            color: #667eea;
         }
 
         /* 二维码容器 */
@@ -158,19 +192,34 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="mainContainer" class="container">
         <h1 id="pageTitle">下载应用</h1>
         <div id="statusContainer">
             <p class="status-text" id="statusText">正在检测环境...</p>
         </div>
 
         <!-- 微信/QQ 引导提示 -->
-        <div id="wechatGuide" class="wechat-guide hidden">
-            <div class="wechat-guide-title">请在浏览器中打开</div>
-            <div class="wechat-guide-arrow">↗</div>
-            <div class="wechat-guide-text">
-                点击右上角 <strong>···</strong> 或 <strong>⋮</strong><br>
-                选择 <strong>"在浏览器中打开"</strong>
+        <div id="wechatGuide" class="container hidden">
+            <div class="title">请在浏览器中打开</div>
+            <div class="message">
+                检测到您在微信/QQ中打开，为了正常下载应用，请点击右上角菜单，选择"在浏览器中打开"。
+            </div>
+            <div class="guide-box">
+                <div class="guide-title">操作步骤</div>
+                <ul class="guide-steps">
+                    <li>
+                        <span class="guide-icon">1</span>
+                        点击右上角 <span class="arrow">⋮</span> 或 <span class="arrow">⋯</span>
+                    </li>
+                    <li>
+                        <span class="guide-icon">2</span>
+                        选择"在浏览器中打开"
+                    </li>
+                    <li>
+                        <span class="guide-icon">3</span>
+                        系统将自动跳转到应用商店
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -367,16 +416,33 @@
                 if (isAndroid) {
                     openAndroidAppStore();
                 } else if (isIOS) {
-                    if (appStoreUrl) {
-                        // 尝试使用 itms-apps:// 协议
-                        const itmsUrl = appStoreUrl.replace('https://apps.apple.com', 'itms-apps://itunes.apple.com');
+                    // 重新获取 URL 数据以确保正确性
+                    const urlData = await getIOSAppStoreUrl(packageName);
+                    if (urlData) {
+                        // 优先使用 itms-apps:// 协议
                         try {
-                            window.location.href = itmsUrl;
+                            console.log('按钮点击：使用 itms-apps:// 协议打开:', urlData.itmsUrl);
+                            window.location.href = urlData.itmsUrl;
+                            // 设置超时，如果 2 秒后还在，更新 appStoreUrl 以便下次使用
+                            setTimeout(() => {
+                                appStoreUrl = urlData.httpsUrl;
+                            }, 100);
                         } catch (e) {
-                            window.location.href = appStoreUrl;
+                            console.error('按钮点击：itms-apps:// 失败，使用 https:', e);
+                            window.location.href = urlData.httpsUrl;
                         }
                     } else {
-                        await openIOSAppStore();
+                        // 如果获取失败，尝试使用缓存的 URL
+                        if (appStoreUrl) {
+                            const itmsUrl = appStoreUrl.replace('https://apps.apple.com', 'itms-apps://itunes.apple.com');
+                            try {
+                                window.location.href = itmsUrl;
+                            } catch (e) {
+                                window.location.href = appStoreUrl;
+                            }
+                        } else {
+                            await openIOSAppStore();
+                        }
                     }
                 }
             }
@@ -404,9 +470,8 @@
 
             // 主逻辑
             if (isWeChat || isQQ) {
-                // 微信/QQ 环境
-                setText('statusText', '');
-                hideElement('statusContainer');
+                // 微信/QQ 环境 - 隐藏主容器，显示引导容器
+                hideElement('mainContainer');
                 showElement('wechatGuide');
             } else if (isAndroid) {
                 // Android 环境
