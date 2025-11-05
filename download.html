@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>应用下载</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .guide-box {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .guide-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .guide-steps {
+            text-align: left;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .guide-steps li {
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+
+        .guide-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 40px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        .button:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .arrow {
+            display: inline-block;
+            margin: 0 5px;
+            font-size: 18px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- 微信/QQ环境提示 -->
+    <div class="container" id="wechatGuide">
+        <div class="title">请在浏览器中打开</div>
+        <div class="message">
+            检测到您在微信/QQ中打开，为了正常下载应用，请点击右上角菜单，选择"在浏览器中打开"。
+        </div>
+        <div class="guide-box">
+            <div class="guide-title">操作步骤</div>
+            <ul class="guide-steps">
+                <li>
+                    <span class="guide-icon">1</span>
+                    点击右上角 <span class="arrow">⋮</span> 或 <span class="arrow">⋯</span>
+                </li>
+                <li>
+                    <span class="guide-icon">2</span>
+                    选择"在浏览器中打开"
+                </li>
+                <li>
+                    <span class="guide-icon">3</span>
+                    系统将自动跳转到应用商店
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 非微信/QQ环境 - 正在唤起 -->
+    <div class="container hidden" id="loadingContainer">
+        <div class="title">正在唤起应用商店</div>
+        <div class="loading">
+            <div class="spinner"></div>
+            <div class="message">正在为您跳转到应用商店...</div>
+        </div>
+    </div>
+
+    <!-- 非微信/QQ环境 - 显示按钮 -->
+    <div class="container hidden" id="buttonContainer">
+        <div class="title">下载应用</div>
+        <div class="message">
+            点击下方按钮前往应用商店下载
+        </div>
+        <a href="#" class="button" id="downloadButton">打开应用商店</a>
+    </div>
+
+    <script>
+        (function() {
+            // 获取URL参数
+            function getUrlParam(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            }
+
+            // 检测是否在微信环境
+            function isWeChat() {
+                const ua = navigator.userAgent.toLowerCase();
+                return ua.indexOf('micromessenger') !== -1;
+            }
+
+            // 检测是否在QQ环境
+            function isQQ() {
+                const ua = navigator.userAgent.toLowerCase();
+                return ua.indexOf('qq/') !== -1;
+            }
+
+            // 检测是否为Android设备
+            function isAndroid() {
+                const ua = navigator.userAgent.toLowerCase();
+                return ua.indexOf('android') !== -1;
+            }
+
+            // 检测是否为iOS设备
+            function isIOS() {
+                const ua = navigator.userAgent.toLowerCase();
+                return /iphone|ipad|ipod/.test(ua);
+            }
+
+            // 获取应用商店链接
+            function getAppStoreUrl(packageName) {
+                if (!packageName) {
+                    return null;
+                }
+
+                if (isAndroid()) {
+                    return 'market://details?id=' + encodeURIComponent(packageName);
+                } else if (isIOS()) {
+                    return 'https://apps.apple.com/app/id' + encodeURIComponent(packageName);
+                }
+
+                return null;
+            }
+
+            // 尝试跳转到应用商店
+            function tryLaunchAppStore() {
+                const packageName = getUrlParam('package');
+                if (!packageName) {
+                    showError('缺少包名参数');
+                    return;
+                }
+
+                const appStoreUrl = getAppStoreUrl(packageName);
+                if (!appStoreUrl) {
+                    showError('不支持的设备类型');
+                    return;
+                }
+
+                // 设置按钮链接
+                const downloadButton = document.getElementById('downloadButton');
+                if (downloadButton) {
+                    downloadButton.href = appStoreUrl;
+                }
+
+                // 尝试拉起应用商店
+                window.location.href = appStoreUrl;
+
+                // 2秒后显示按钮
+                setTimeout(function() {
+                    const loadingContainer = document.getElementById('loadingContainer');
+                    const buttonContainer = document.getElementById('buttonContainer');
+                    
+                    if (loadingContainer) {
+                        loadingContainer.classList.add('hidden');
+                    }
+                    if (buttonContainer) {
+                        buttonContainer.classList.remove('hidden');
+                    }
+                }, 2000);
+            }
+
+            // 显示错误信息
+            function showError(message) {
+                const container = document.getElementById('buttonContainer');
+                if (container) {
+                    const messageEl = container.querySelector('.message');
+                    if (messageEl) {
+                        messageEl.textContent = message || '参数错误';
+                    }
+                    container.classList.remove('hidden');
+                }
+            }
+
+            // 主逻辑
+            function init() {
+                const wechatGuide = document.getElementById('wechatGuide');
+                const loadingContainer = document.getElementById('loadingContainer');
+                const buttonContainer = document.getElementById('buttonContainer');
+
+                // 检测微信/QQ环境
+                if (isWeChat() || isQQ()) {
+                    // 显示微信/QQ引导页面
+                    if (wechatGuide) {
+                        wechatGuide.classList.remove('hidden');
+                    }
+                    if (loadingContainer) {
+                        loadingContainer.classList.add('hidden');
+                    }
+                    if (buttonContainer) {
+                        buttonContainer.classList.add('hidden');
+                    }
+                } else {
+                    // 非微信/QQ环境，尝试拉起应用商店
+                    if (wechatGuide) {
+                        wechatGuide.classList.add('hidden');
+                    }
+                    if (loadingContainer) {
+                        loadingContainer.classList.remove('hidden');
+                    }
+                    if (buttonContainer) {
+                        buttonContainer.classList.add('hidden');
+                    }
+                    
+                    tryLaunchAppStore();
+                }
+            }
+
+            // 页面加载完成后初始化
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+</html>
+
