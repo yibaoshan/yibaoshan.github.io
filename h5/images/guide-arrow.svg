@@ -1,0 +1,14 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#856404" />
+    </marker>
+  </defs>
+  <!-- 右上角箭头 -->
+  <line x1="50" y1="50" x2="150" y2="50" stroke="#856404" stroke-width="4" marker-end="url(#arrowhead)"/>
+  <line x1="150" y1="50" x2="150" y2="150" stroke="#856404" stroke-width="4" marker-end="url(#arrowhead)"/>
+  <!-- 右上角三个点 -->
+  <circle cx="160" cy="20" r="4" fill="#856404"/>
+  <circle cx="160" cy="30" r="4" fill="#856404"/>
+  <circle cx="160" cy="40" r="4" fill="#856404"/>
+</svg>
