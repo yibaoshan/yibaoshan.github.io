@@ -97,19 +97,6 @@
             margin-bottom: 20px;
         }
 
-        .guide-arrow-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            margin: 20px auto;
-        }
-
-        .guide-arrow-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
         .wechat-guide-text {
             font-size: 16px;
             color: #856404;
@@ -117,9 +104,25 @@
             line-height: 1.6;
         }
 
+        .wechat-guide-arrow {
+            font-size: 48px;
+            margin: 20px 0;
+            color: #856404;
+        }
+
         /* 二维码容器 */
         .qrcode-container {
             margin: 30px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
         }
 
         .qrcode-container canvas {
@@ -128,6 +131,8 @@
             background: white;
             padding: 10px;
             max-width: 100%;
+            margin: 0 auto;
+            display: block;
         }
 
         .loading {
@@ -162,9 +167,7 @@
         <!-- 微信/QQ 引导提示 -->
         <div id="wechatGuide" class="wechat-guide hidden">
             <div class="wechat-guide-title">请在浏览器中打开</div>
-            <div class="guide-arrow-container">
-                <img src="images/guide-arrow.svg" alt="引导箭头" class="guide-arrow-image" onerror="this.style.display='none'">
-            </div>
+            <div class="wechat-guide-arrow">↗</div>
             <div class="wechat-guide-text">
                 点击右上角 <strong>···</strong> 或 <strong>⋮</strong><br>
                 选择 <strong>"在浏览器中打开"</strong>
@@ -256,14 +259,22 @@
             // iOS 获取 App Store 链接
             async function getIOSAppStoreUrl(bundleId) {
                 try {
+                    console.log('正在查询 Bundle ID:', bundleId);
                     const response = await fetch(`https://itunes.apple.com/lookup?bundleId=${bundleId}`);
                     const data = await response.json();
                     
+                    console.log('iTunes API 返回数据:', data);
+                    
                     if (data.results && data.results.length > 0) {
                         const appId = data.results[0].trackId;
-                        return `https://apps.apple.com/app/id${appId}`;
+                        console.log('找到 App ID:', appId);
+                        // 使用 itms-apps:// 协议来打开 App Store（iOS 推荐方式）
+                        return {
+                            itmsUrl: `itms-apps://itunes.apple.com/app/id${appId}`,
+                            httpsUrl: `https://apps.apple.com/app/id${appId}`
+                        };
                     } else {
-                        console.error('未找到对应的 App ID');
+                        console.error('未找到对应的 App ID，返回结果:', data);
                         return null;
                     }
                 } catch (e) {
@@ -310,20 +321,35 @@
             // iOS 打开 App Store
             async function openIOSAppStore() {
                 setText('statusText', '正在打开 App Store...');
-                const url = await getIOSAppStoreUrl(packageName);
+                const urlData = await getIOSAppStoreUrl(packageName);
                 
-                if (url) {
-                    appStoreUrl = url;
+                if (urlData) {
+                    // 优先使用 itms-apps:// 协议
+                    appStoreUrl = urlData.httpsUrl;
                     try {
-                        window.location.href = url;
-                        // 如果 2 秒后页面还在，显示按钮
+                        // 先尝试使用 itms-apps:// 协议（iOS 推荐）
+                        console.log('尝试使用 itms-apps:// 协议打开:', urlData.itmsUrl);
+                        window.location.href = urlData.itmsUrl;
+                        
+                        // 如果 2 秒后页面还在，显示按钮并使用 https 链接
                         appStoreTimeout = setTimeout(() => {
                             showElement('appStoreButton');
                             setText('statusText', '如果未自动跳转，请点击下方按钮');
                         }, 2000);
                     } catch (e) {
-                        showElement('appStoreButton');
-                        setText('statusText', '无法打开 App Store，请点击下方按钮手动打开');
+                        console.error('使用 itms-apps:// 协议失败，尝试 https:', e);
+                        // 如果 itms-apps:// 失败，尝试使用 https
+                        try {
+                            window.location.href = urlData.httpsUrl;
+                            appStoreTimeout = setTimeout(() => {
+                                showElement('appStoreButton');
+                                setText('statusText', '如果未自动跳转，请点击下方按钮');
+                            }, 2000);
+                        } catch (e2) {
+                            console.error('使用 https 协议也失败:', e2);
+                            showElement('appStoreButton');
+                            setText('statusText', '无法打开 App Store，请点击下方按钮手动打开');
+                        }
                     }
                 } else {
                     setText('statusText', '无法获取应用信息，请手动在 App Store 中搜索');
@@ -342,7 +368,13 @@
                     openAndroidAppStore();
                 } else if (isIOS) {
                     if (appStoreUrl) {
-                        window.location.href = appStoreUrl;
+                        // 尝试使用 itms-apps:// 协议
+                        const itmsUrl = appStoreUrl.replace('https://apps.apple.com', 'itms-apps://itunes.apple.com');
+                        try {
+                            window.location.href = itmsUrl;
+                        } catch (e) {
+                            window.location.href = appStoreUrl;
+                        }
                     } else {
                         await openIOSAppStore();
                     }
