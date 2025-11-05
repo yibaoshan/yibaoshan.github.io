@@ -397,8 +397,8 @@
                 // iOS 应用商店链接
                 const iosUrl = 'https://apps.apple.com/cn/app/id' + DEFAULT_IOS_PACKAGE;
                 
-                // Android 应用商店链接（使用网页版 Google Play）
-                const androidUrl = 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(DEFAULT_ANDROID_PACKAGE);
+                // Android 使用当前链接地址
+                const androidUrl = window.location.href;
                 
                 // 生成 iOS 二维码
                 const iosQrcodeEl = document.getElementById('iosQrcode');
