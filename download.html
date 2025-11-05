@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
-    <title>应用下载</title>
+    <title id="pageTitle">应用下载</title>
     <style>
         * {
             margin: 0;
@@ -141,12 +141,115 @@
             font-size: 18px;
             color: #667eea;
         }
+
+        .qrcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .qrcode-canvas {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .qrcode-tip {
+            font-size: 14px;
+            color: #999;
+            line-height: 1.5;
+        }
+
+        .arrow-guide {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .arrow-guide-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .arrow-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transform-origin: left center;
+            animation: arrowPulse 1.5s ease-in-out infinite;
+        }
+
+        .arrow-head {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 12px solid #764ba2;
+            transform: translateY(-50%);
+            animation: arrowPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes arrowPulse {
+            0%, 100% {
+                opacity: 1;
+                transform: translateY(-50%) scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: translateY(-50%) scale(0.95);
+            }
+        }
+
+        .arrow-point {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            animation: pointPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes pointPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- 箭头指引 -->
+    <div class="arrow-guide hidden" id="arrowGuide">
+        <div class="arrow-guide-inner">
+            <div class="arrow-line"></div>
+            <div class="arrow-head"></div>
+            <div class="arrow-point"></div>
+        </div>
+    </div>
+
     <!-- 微信/QQ环境提示 -->
     <div class="container" id="wechatGuide">
-        <div class="title">请在浏览器中打开</div>
+        <div class="title" id="wechatGuideTitle">请在浏览器中打开</div>
         <div class="message">
             检测到您在微信/QQ中打开，为了正常下载应用，请点击右上角菜单，选择"在浏览器中打开"。
         </div>
@@ -171,7 +274,7 @@
 
     <!-- 非微信/QQ环境 - 正在唤起 -->
     <div class="container hidden" id="loadingContainer">
-        <div class="title">正在唤起应用商店</div>
+        <div class="title" id="loadingTitle">正在唤起应用商店</div>
         <div class="loading">
             <div class="spinner"></div>
             <div class="message">正在为您跳转到应用商店...</div>
@@ -180,11 +283,25 @@
 
     <!-- 非微信/QQ环境 - 显示按钮 -->
     <div class="container hidden" id="buttonContainer">
-        <div class="title">下载应用</div>
+        <div class="title" id="buttonTitle">下载应用</div>
         <div class="message">
             点击下方按钮前往应用商店下载
         </div>
         <a href="#" class="button" id="downloadButton">打开应用商店</a>
+    </div>
+
+    <!-- 未知设备 - 显示二维码 -->
+    <div class="container hidden" id="qrcodeContainer">
+        <div class="title" id="qrcodeTitle">扫码下载</div>
+        <div class="message">
+            请使用手机扫描下方二维码下载应用
+        </div>
+        <div class="qrcode-container">
+            <canvas id="qrcodeCanvas" class="qrcode-canvas"></canvas>
+            <div class="qrcode-tip">
+                使用微信或其他扫码工具扫描二维码
+            </div>
+        </div>
     </div>
 
     <script>
@@ -193,6 +310,35 @@
             function getUrlParam(name) {
                 const urlParams = new URLSearchParams(window.location.search);
                 return urlParams.get(name);
+            }
+
+            // 获取标题，如果为空则使用默认值
+            function getTitle() {
+                const title = getUrlParam('title');
+                return title || '应用下载';
+            }
+
+            // 设置页面标题
+            function setPageTitle() {
+                const title = getTitle();
+                document.title = title;
+            }
+
+            // 设置所有容器标题
+            function setContainerTitles() {
+                const title = getTitle();
+                const titleElements = [
+                    document.getElementById('wechatGuideTitle'),
+                    document.getElementById('loadingTitle'),
+                    document.getElementById('buttonTitle'),
+                    document.getElementById('qrcodeTitle')
+                ];
+                
+                titleElements.forEach(function(el) {
+                    if (el) {
+                        el.textContent = title;
+                    }
+                });
             }
 
             // 检测是否在微信环境
@@ -217,6 +363,11 @@
             function isIOS() {
                 const ua = navigator.userAgent.toLowerCase();
                 return /iphone|ipad|ipod/.test(ua);
+            }
+
+            // 检测是否为移动设备（Android或iOS）
+            function isMobileDevice() {
+                return isAndroid() || isIOS();
             }
 
             // 获取应用商店链接
@@ -283,11 +434,260 @@
                 }
             }
 
+            // QR码生成算法（基于标准QR码规范）
+            function generateQRCode(text, canvas) {
+                const size = 200;
+                const modules = 25; // QR码版本1，25x25模块
+                const moduleSize = Math.floor(size / modules);
+                const canvasSize = moduleSize * modules;
+                
+                canvas.width = canvasSize;
+                canvas.height = canvasSize;
+                const ctx = canvas.getContext('2d');
+                
+                // 填充白色背景
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+                
+                // 创建模块矩阵
+                const matrix = createQRMatrix(text, modules);
+                
+                // 绘制模块
+                ctx.fillStyle = '#000000';
+                for (let row = 0; row < modules; row++) {
+                    for (let col = 0; col < modules; col++) {
+                        if (matrix[row][col]) {
+                            ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                        }
+                    }
+                }
+            }
+
+            // 创建QR码矩阵
+            function createQRMatrix(text, size) {
+                const matrix = [];
+                for (let i = 0; i < size; i++) {
+                    matrix[i] = new Array(size).fill(false);
+                }
+                
+                // 绘制定位图案
+                drawFinderPatternMatrix(matrix, 0, 0, size);
+                drawFinderPatternMatrix(matrix, size - 7, 0, size);
+                drawFinderPatternMatrix(matrix, 0, size - 7, size);
+                
+                // 绘制分隔线
+                for (let i = 0; i < 8; i++) {
+                    if (i !== 6) {
+                        matrix[7][i] = false;
+                        matrix[i][7] = false;
+                        matrix[size - 8][i] = false;
+                        matrix[i][size - 8] = false;
+                        matrix[7][size - 1 - i] = false;
+                        matrix[size - 1 - i][7] = false;
+                    }
+                }
+                
+                // 绘制时序图案（水平）
+                for (let i = 8; i < size - 8; i++) {
+                    matrix[6][i] = (i % 2 === 0);
+                }
+                
+                // 绘制时序图案（垂直）
+                for (let i = 8; i < size - 8; i++) {
+                    matrix[i][6] = (i % 2 === 0);
+                }
+                
+                // 对齐图案（版本1不需要）
+                
+                // 编码数据
+                const dataBits = encodeQRData(text);
+                
+                // 填充数据模块（Z字形填充）
+                let dataIndex = 0;
+                let direction = -1; // -1向上，1向下
+                
+                // 从右下角开始，向上填充
+                for (let colPair = size - 1; colPair > 0 && dataIndex < dataBits.length; colPair -= 2) {
+                    // 跳过垂直时序图案列
+                    if (colPair === 6) {
+                        colPair = 5;
+                    }
+                    
+                    // 向上填充
+                    if (direction === -1) {
+                        for (let row = size - 1; row >= 0 && dataIndex < dataBits.length; row--) {
+                            // 左列
+                            if (isDataModule(row, colPair, size)) {
+                                matrix[row][colPair] = dataBits[dataIndex] === 1;
+                                dataIndex++;
+                            }
+                            // 右列
+                            if (colPair > 0 && isDataModule(row, colPair - 1, size) && dataIndex < dataBits.length) {
+                                matrix[row][colPair - 1] = dataBits[dataIndex] === 1;
+                                dataIndex++;
+                            }
+                        }
+                    } else {
+                        // 向下填充
+                        for (let row = 0; row < size && dataIndex < dataBits.length; row++) {
+                            // 左列
+                            if (isDataModule(row, colPair, size)) {
+                                matrix[row][colPair] = dataBits[dataIndex] === 1;
+                                dataIndex++;
+                            }
+                            // 右列
+                            if (colPair > 0 && isDataModule(row, colPair - 1, size) && dataIndex < dataBits.length) {
+                                matrix[row][colPair - 1] = dataBits[dataIndex] === 1;
+                                dataIndex++;
+                            }
+                        }
+                    }
+                    direction *= -1;
+                }
+                
+                // 应用掩码模式0（检查器板模式）
+                applyMask(matrix, size, 0);
+                
+                return matrix;
+            }
+
+            // 编码QR码数据
+            function encodeQRData(text) {
+                const bits = [];
+                
+                // 模式指示符：字节模式 (0100)
+                bits.push(0, 1, 0, 0);
+                
+                // 字符计数（8位，对于版本1最多可容纳17个字节）
+                const byteLength = new TextEncoder().encode(text).length;
+                const countBits = byteLength.toString(2).padStart(8, '0');
+                for (let i = 0; i < 8; i++) {
+                    bits.push(parseInt(countBits[i]));
+                }
+                
+                // 数据编码：UTF-8字节
+                const encoder = new TextEncoder();
+                const bytes = encoder.encode(text);
+                for (let byte of bytes) {
+                    const byteBits = byte.toString(2).padStart(8, '0');
+                    for (let i = 0; i < 8; i++) {
+                        bits.push(parseInt(byteBits[i]));
+                    }
+                }
+                
+                // 添加终止符（最多4位）
+                bits.push(0, 0, 0, 0);
+                
+                // 填充到8位的倍数
+                while (bits.length % 8 !== 0) {
+                    bits.push(0);
+                }
+                
+                // 添加填充字节（236和17交替）
+                const dataCapacity = 152; // 版本1，纠错级别M
+                let padByte = 236; // 11101100
+                while (bits.length < dataCapacity * 8) {
+                    const padBits = padByte.toString(2).padStart(8, '0');
+                    for (let i = 0; i < 8; i++) {
+                        bits.push(parseInt(padBits[i]));
+                    }
+                    padByte = padByte === 236 ? 17 : 236; // 交替
+                    if (bits.length >= dataCapacity * 8) break;
+                }
+                
+                return bits.slice(0, dataCapacity * 8);
+            }
+
+            // 检查是否为数据模块
+            function isDataModule(row, col, size) {
+                // 跳过定位图案区域
+                if ((row < 9 && col < 9) || 
+                    (row < 9 && col >= size - 8) ||
+                    (row >= size - 8 && col < 9)) {
+                    return false;
+                }
+                // 跳过时序图案
+                if (row === 6 || col === 6) {
+                    return false;
+                }
+                return true;
+            }
+
+            // 绘制定位图案到矩阵
+            function drawFinderPatternMatrix(matrix, row, col, size) {
+                const pattern = [
+                    [1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,1],
+                    [1,0,1,1,1,0,1],
+                    [1,0,1,1,1,0,1],
+                    [1,0,1,1,1,0,1],
+                    [1,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1]
+                ];
+                
+                for (let i = 0; i < 7; i++) {
+                    for (let j = 0; j < 7; j++) {
+                        if (row + i < size && col + j < size) {
+                            matrix[row + i][col + j] = pattern[i][j] === 1;
+                        }
+                    }
+                }
+            }
+
+            // 应用掩码
+            function applyMask(matrix, size, maskPattern) {
+                for (let row = 0; row < size; row++) {
+                    for (let col = 0; col < size; col++) {
+                        // 跳过功能模块
+                        if ((row < 9 && col < 9) || 
+                            (row < 9 && col >= size - 8) ||
+                            (row >= size - 8 && col < 9) ||
+                            row === 6 || col === 6) {
+                            continue;
+                        }
+                        
+                        let shouldInvert = false;
+                        switch (maskPattern) {
+                            case 0: // (row + col) % 2 == 0
+                                shouldInvert = (row + col) % 2 === 0;
+                                break;
+                        }
+                        
+                        if (shouldInvert) {
+                            matrix[row][col] = !matrix[row][col];
+                        }
+                    }
+                }
+            }
+
+            // 显示二维码
+            function showQRCode() {
+                const qrcodeContainer = document.getElementById('qrcodeContainer');
+                const qrcodeCanvas = document.getElementById('qrcodeCanvas');
+                
+                if (qrcodeContainer && qrcodeCanvas) {
+                    // 获取当前完整URL
+                    const currentUrl = window.location.href;
+                    
+                    // 生成二维码
+                    generateQRCode(currentUrl, qrcodeCanvas);
+                    
+                    // 显示容器
+                    qrcodeContainer.classList.remove('hidden');
+                }
+            }
+
             // 主逻辑
             function init() {
+                // 设置标题
+                setPageTitle();
+                setContainerTitles();
+
                 const wechatGuide = document.getElementById('wechatGuide');
                 const loadingContainer = document.getElementById('loadingContainer');
                 const buttonContainer = document.getElementById('buttonContainer');
+                const qrcodeContainer = document.getElementById('qrcodeContainer');
+                const arrowGuide = document.getElementById('arrowGuide');
 
                 // 检测微信/QQ环境
                 if (isWeChat() || isQQ()) {
@@ -295,22 +695,51 @@
                     if (wechatGuide) {
                         wechatGuide.classList.remove('hidden');
                     }
+                    if (arrowGuide) {
+                        arrowGuide.classList.remove('hidden');
+                    }
                     if (loadingContainer) {
                         loadingContainer.classList.add('hidden');
                     }
                     if (buttonContainer) {
                         buttonContainer.classList.add('hidden');
                     }
-                } else {
-                    // 非微信/QQ环境，尝试拉起应用商店
+                    if (qrcodeContainer) {
+                        qrcodeContainer.classList.add('hidden');
+                    }
+                } else if (!isMobileDevice()) {
+                    // 不是移动设备，显示二维码
                     if (wechatGuide) {
                         wechatGuide.classList.add('hidden');
+                    }
+                    if (arrowGuide) {
+                        arrowGuide.classList.add('hidden');
+                    }
+                    if (loadingContainer) {
+                        loadingContainer.classList.add('hidden');
+                    }
+                    if (buttonContainer) {
+                        buttonContainer.classList.add('hidden');
+                    }
+                    if (qrcodeContainer) {
+                        showQRCode();
+                    }
+                } else {
+                    // 非微信/QQ的移动环境，尝试拉起应用商店
+                    if (wechatGuide) {
+                        wechatGuide.classList.add('hidden');
+                    }
+                    if (arrowGuide) {
+                        arrowGuide.classList.add('hidden');
                     }
                     if (loadingContainer) {
                         loadingContainer.classList.remove('hidden');
                     }
                     if (buttonContainer) {
                         buttonContainer.classList.add('hidden');
+                    }
+                    if (qrcodeContainer) {
+                        qrcodeContainer.classList.add('hidden');
                     }
                     
                     tryLaunchAppStore();
