@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
-    <title>应用下载</title>
+    <title>嘴替小助</title>
     <script src="qrcode.js"></script>
     <style>
         * {
@@ -160,6 +160,41 @@
         #qrcode {
             display: inline-block;
         }
+
+        .dual-qrcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .qrcode-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .qrcode-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .qrcode-row {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 480px) {
+            .qrcode-row {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -219,6 +254,30 @@
     </div>
 </div>
 
+<!-- 双二维码展示容器 -->
+<div class="container hidden" id="dualQrcodeContainer">
+    <div class="title">选择平台下载</div>
+    <div class="message">
+        请选择您的手机平台，扫描对应的二维码下载应用
+    </div>
+    <div class="dual-qrcode-container">
+        <div class="qrcode-row">
+            <div class="qrcode-item">
+                <div class="qrcode-label">iOS 下载</div>
+                <div class="qrcode-wrapper">
+                    <div id="iosQrcode"></div>
+                </div>
+            </div>
+            <div class="qrcode-item">
+                <div class="qrcode-label">Android 下载</div>
+                <div class="qrcode-wrapper">
+                    <div id="androidQrcode"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     (function() {
         // 获取URL参数
@@ -251,15 +310,21 @@
             return /iphone|ipad|ipod/.test(ua);
         }
 
+        // 默认 package 值
+        const DEFAULT_ANDROID_PACKAGE = 'com.xc.assistant';
+        const DEFAULT_IOS_PACKAGE = '6754418445';
+
         // 获取应用商店链接
-        function getAppStoreUrl(packageName) {
+        function getAppStoreUrl(packageName, platform) {
             if (!packageName) {
                 return null;
             }
 
-            if (isAndroid()) {
+            const targetPlatform = platform || (isAndroid() ? 'android' : (isIOS() ? 'ios' : null));
+            
+            if (targetPlatform === 'android') {
                 return 'market://details?id=' + encodeURIComponent(packageName);
-            } else if (isIOS()) {
+            } else if (targetPlatform === 'ios') {
                 return 'https://apps.apple.com/app/id' + encodeURIComponent(packageName);
             }
 
@@ -271,6 +336,7 @@
             const loadingContainer = document.getElementById('loadingContainer');
             const buttonContainer = document.getElementById('buttonContainer');
             const qrcodeContainer = document.getElementById('qrcodeContainer');
+            const dualQrcodeContainer = document.getElementById('dualQrcodeContainer');
             
             // 隐藏其他容器
             if (loadingContainer) {
@@ -278,6 +344,9 @@
             }
             if (buttonContainer) {
                 buttonContainer.classList.add('hidden');
+            }
+            if (dualQrcodeContainer) {
+                dualQrcodeContainer.classList.add('hidden');
             }
             
             // 显示二维码容器
@@ -303,12 +372,87 @@
             }
         }
 
+        // 显示双二维码（iOS 和 Android）
+        function showDualQRCode() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const buttonContainer = document.getElementById('buttonContainer');
+            const qrcodeContainer = document.getElementById('qrcodeContainer');
+            const dualQrcodeContainer = document.getElementById('dualQrcodeContainer');
+            
+            // 隐藏其他容器
+            if (loadingContainer) {
+                loadingContainer.classList.add('hidden');
+            }
+            if (buttonContainer) {
+                buttonContainer.classList.add('hidden');
+            }
+            if (qrcodeContainer) {
+                qrcodeContainer.classList.add('hidden');
+            }
+            
+            // 显示双二维码容器
+            if (dualQrcodeContainer) {
+                dualQrcodeContainer.classList.remove('hidden');
+                
+                // iOS 应用商店链接
+                const iosUrl = 'https://apps.apple.com/cn/app/id' + DEFAULT_IOS_PACKAGE;
+                
+                // Android 应用商店链接（使用网页版 Google Play）
+                const androidUrl = 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(DEFAULT_ANDROID_PACKAGE);
+                
+                // 生成 iOS 二维码
+                const iosQrcodeEl = document.getElementById('iosQrcode');
+                if (iosQrcodeEl) {
+                    iosQrcodeEl.innerHTML = '';
+                    new QRCode(iosQrcodeEl, {
+                        text: iosUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+                
+                // 生成 Android 二维码
+                const androidQrcodeEl = document.getElementById('androidQrcode');
+                if (androidQrcodeEl) {
+                    androidQrcodeEl.innerHTML = '';
+                    new QRCode(androidQrcodeEl, {
+                        text: androidUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            }
+        }
+
         // 尝试跳转到应用商店
         function tryLaunchAppStore() {
-            const packageName = getUrlParam('package');
-            if (!packageName) {
-                showError('缺少包名参数');
+            const titleParam = getUrlParam('title');
+            const packageParam = getUrlParam('package');
+            
+            // 如果未指定 title 和 package，且设备非 iOS/Android，显示双二维码
+            if (!titleParam && !packageParam && !isAndroid() && !isIOS()) {
+                showDualQRCode();
                 return;
+            }
+            
+            // 使用默认 package 值（如果未指定）
+            let packageName = packageParam;
+            if (!packageName) {
+                if (isAndroid()) {
+                    packageName = DEFAULT_ANDROID_PACKAGE;
+                } else if (isIOS()) {
+                    packageName = DEFAULT_IOS_PACKAGE;
+                } else {
+                    // 无法识别设备类型，直接显示二维码
+                    showQRCode();
+                    return;
+                }
             }
 
             const appStoreUrl = getAppStoreUrl(packageName);
@@ -357,13 +501,13 @@
         function init() {
             // 设置页面标题
             const titleParam = getUrlParam('title');
-            const pageTitle = titleParam || '应用下载';
+            const pageTitle = titleParam || '嘴替小助';
             document.title = pageTitle;
             
             // 更新所有显示标题的元素
             const titleElements = document.querySelectorAll('.title');
             titleElements.forEach(function(el) {
-                if (el.textContent === '应用下载' || el.textContent === '下载应用') {
+                if (el.textContent === '应用下载' || el.textContent === '下载应用' || el.textContent === '嘴替小助') {
                     el.textContent = pageTitle;
                 }
             });
